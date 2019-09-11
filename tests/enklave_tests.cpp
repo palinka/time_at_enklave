@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "../enklave.hpp"
 #include "../config.hpp" // TODO Write a test to check sanity of this file!
+
 using namespace enklave;
 
 // TODO: pass timezone offset to UTC via flags.
@@ -8,19 +9,12 @@ TEST(parseDatetime, WithSuccess) {
     using namespace date;
 
     // Convert a point in time from string to sys_seconds (alias for std::chrono::point_in_time_string).
-    auto point_in_time = parse_datetime("Confirmation_  Check in 2019-08-22T15_31_05+02_00").value();
+    auto point_in_time = parse_datetime("Confirmation_  Check in 2019-08-22T15_31_05+02_00.eml").value();
 
     // Reconvert to a string.
     // Add manually the timezone difference; automation not offered by used lib.
     auto point_in_time_string = format("%F %T", point_in_time + 2h);
     EXPECT_EQ("2019-08-22 15:31:05", point_in_time_string);
-
-    /*
-    // TODO Test regular ISO.
-    point_in_time = parse_datetime("Something 2019-08-22T15:31:05+02:00").value();
-    point_in_time_string = format("%F %T", point_in_time + 2h);
-    EXPECT_EQ("2019-08-22 15:31:05", point_in_time_string);
-    */
 }
 
 TEST(parseDatetime, WithFailure) {
