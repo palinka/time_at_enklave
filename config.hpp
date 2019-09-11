@@ -5,10 +5,11 @@
 #include <regex>
 
 //File containing namespace for configuration
+// TODO get rid of global vars / use contexpr.
 namespace enklave {
     namespace config {
-        const std::string folder_with_mails{"../tests/data/"};
-        const std::regex relevant_mails_filename_contains{"Confirmation_"};
+        const std::string path_with_mails{"../tests/data/"};
+        const std::regex relevant_files_regex{"Confirmation_"};
         const std::regex check_in_pattern{"Check in"};
         const std::regex check_out_pattern{"Check out"};
     }
