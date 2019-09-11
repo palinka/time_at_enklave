@@ -5,14 +5,31 @@ Enklave is the co-working space where I am refreshing and modernizing my C++ kno
 This C++ example project computes the time I spend in the co-working space. For that I download all my mails to a folder and spin up this program.
 
 ## Prerequisites
-* TODO Technical prerequisites.
-    * Cmake
-    * Compiler versions
+Works with:
+* cmake version 3.15.2
+* gcc version 7.4.0
+* TODO Dependencies
+    * google test
     * date.h
-* Download all e-mails to one folder.
 
 ## Compile and run
-* TODO
+```
+# Compile
+mkdir build && cd build
+cmake ../ && make
+
+# Run tests
+./time_at_enklave_tests
+
+# Run program
+./time_at_enklave
+```
+
+The program will use some test-files contained in 'tests/data/' by default. However, just pass a folder to another location like this:
+
+```
+./time_at_enklave /some/other/path
+```
 
 ## What is should do (Algorithm)
 * Scan a folder containing for exported emails as files.
@@ -28,10 +45,6 @@ This C++ example project computes the time I spend in the co-working space. For 
     * ranges
     * multithreading / coroutines
     * Eventually set-up continious integrations, e.g. conan + travis
-* Grab TODOs
 * Open relevant files and search for sender.
-* Ensure project and tests can be build and run from cmd.
-    * https://stackoverflow.com/questions/54678817/compile-run-clion-project-from-terminal
+* Grab TODOs
 
-## Decisions
-* I use std::optional to return from most functions. std::expected is not yet there. I 
