@@ -18,18 +18,15 @@
 namespace enklave {
     using namespace std;
 
+    // TODO: document types!
     using check_in_datetime = date::sys_seconds;
     using check_out_datetime = date::sys_seconds;
-    // TODO use references!
     using enklave_slot = pair<check_in_datetime, check_out_datetime>;
     using duration = std::chrono::duration<int>; // Let's use int for durations.
 
     namespace fs = experimental::filesystem;
 
 /**
- * TODO generalize function by passing regex pattern as argument.
- * TODO fs seems to be async.
-   TODO search also if file ends in .eml
  * @param folder Folder containing downloaded emails (*.eml).
  * @param relevant_files_regex Regex determining which files are considered.
  * @return Vector containing filesystem paths of relevant mails. Empty vector if none is found in folder.
@@ -46,22 +43,14 @@ namespace enklave {
         return relevant_files;
     }
 
-// TODO Update doc!
 /**
- * Converts a string to the useful date::sys_seconds.
+ * Converts a string containing a ISO 8601-like date to the date::sys_seconds.
  *
- * Valid input strings are in ISO 8601 format. In addition, ISO-like strings that use "_" instead of ":" will be converted to ISO format
- * first by this function.
+ * ISO 8601-like strings that use "_" instead of ":" are valid input, e.g. "Confirmation 2019-08-22T15_31_05+02_00.eml".
  *
- * I return an optional to avoid any confusions with '0' which is a valid value for date::sys_seconds.
+ * Returns an optional to avoid any confusions with '0' which is a valid value for date::sys_seconds.
  *
- * TODO: decide if regex_replace should go to another place.
- *
- * Valid example input strings:
- * - 2019-08-22T15_31_05+02_00
- * - 2019-08-22T15:31:05+02:00
- *
- * @param str String in ISO 8601 format or string in pseudo ISO format using "_" instead of ":".
+ * @param str String in ISO 8601-like format.
  * @return std::optional<date::sys_seconds> in UTC.
  */
     std::optional<date::sys_seconds> parse_datetime(const string &input) {
@@ -84,6 +73,11 @@ namespace enklave {
         }
     }
 
+    /**
+     *
+     * @param p Vector containing filesystem paths for parsing.
+     * @return Vector with enklave_slots. TODO make link to type.
+     */
     vector<enklave_slot> parse(const vector<fs::path> &p) noexcept(false) {
         using namespace date; // use also overload for <<
         set<check_in_datetime> check_ins;
@@ -112,7 +106,7 @@ namespace enklave {
 
 
         // A pair of iterators to the sets could also be returned; for now I prefer to zip them in a vector.
-        vector<enklave_slot> slots(check_ins.size()); // TODO size is known, is vector the most efficient?
+        vector<enklave_slot> slots(check_ins.size());
         std::transform(check_ins.begin(), check_ins.end(), check_outs.begin(), std::back_inserter(slots),
                        [](auto check_in, auto check_out) {
                            return make_pair(check_in, check_out);
