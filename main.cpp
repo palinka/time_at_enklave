@@ -2,13 +2,11 @@
 #include "enklave.hpp"
 
 int main() {
-    using namespace date;
     using namespace enklave;
 
-    auto files_paths = get_relevant_file_paths_from_folder(enklave::config::folder_with_mails);
-    auto slots = parse(files_paths);
-    auto result = compute_duration(slots);
-    std::cout << "Time spent at enklave: " << format("%T", result) << '\n';
+    auto files_paths = get_relevant_files(enklave::config::path_with_mails, enklave::config::relevant_files_regex);
+    auto result = compute_duration(parse(files_paths));
+    std::cout << "Time spent at enklave: " << date::format("%T", result) << '\n';
 
     return 0;
 }
