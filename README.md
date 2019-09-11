@@ -29,7 +29,6 @@ This C++ example project computes the time I spend in the co-working space. For 
     * multithreading / coroutines
     * Eventually set-up continious integrations, e.g. conan + travis
 * Grab TODOs
-* Pass path by cmd-arg.
 * Open relevant files and search for sender.
 * Ensure project and tests can be build and run from cmd.
     * https://stackoverflow.com/questions/54678817/compile-run-clion-project-from-terminal

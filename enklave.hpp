@@ -27,6 +27,10 @@ namespace enklave {
     namespace fs = experimental::filesystem;
 
 /**
+ * Get all filepaths of files in a folder where the filename matches a regex.
+ *
+ * Function can throw, e.g. if path is not found.
+ *
  * @param folder Folder containing downloaded emails (*.eml).
  * @param relevant_files_regex Regex determining which files are considered.
  * @return Vector containing filesystem paths of relevant mails. Empty vector if none is found in folder.
