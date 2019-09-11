@@ -53,7 +53,7 @@ namespace enklave {
  * @param str String in ISO 8601-like format.
  * @return std::optional<date::sys_seconds> in UTC.
  */
-    std::optional<date::sys_seconds> parse_datetime(const string &input) {
+    std::optional<date::sys_seconds> parse_datetime(const string &input) noexcept {
         // First, reduce input string to datetime digits only.
         smatch matches_date_time; // Contains result.
         const regex date_time_pattern{R"(\d{4}-\d{2}-\d{2}T\d{2}_\d{2}_\d{2}\+\d{2}_\d{2})"};
@@ -115,7 +115,7 @@ namespace enklave {
         return slots;
     }
 
-    duration compute_duration(const vector<enklave_slot> &slots) {
+    duration compute_duration(const vector<enklave_slot> &slots) noexcept {
         return std::accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, auto slot) {
             return accumulator + (slot.second - slot.first);
         });
