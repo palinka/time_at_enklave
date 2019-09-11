@@ -31,15 +31,16 @@ namespace enklave {
  * TODO fs seems to be async.
    TODO search also if file ends in .eml
  * @param folder Folder containing downloaded emails (*.eml).
+ * @param relevant_files_regex Regex determining which files are considered.
  * @return Vector containing filesystem paths of relevant mails. Empty vector if none is found in folder.
  */
-    vector<fs::path> get_relevant_file_paths_from_folder(const fs::path folder) noexcept(false) {
+    vector<fs::path> get_relevant_files(const fs::path folder, std::regex relevant_files_regex) noexcept(false) {
         // Throw, e.g. if the directory is not found et.all.
         vector<fs::path> relevant_files;
         cout << "Looking for relevant files in: " << folder << ":\n";
         for (const fs::directory_entry &f : fs::directory_iterator{folder}) {
             // Search for pattern in filename and add to vector if matched.
-            if (regex_search(f.path().filename().string(), enklave::config::relevant_mails_filename_contains))
+            if (regex_search(f.path().filename().string(), relevant_files_regex))
                 relevant_files.push_back(f);
         }
         return relevant_files;

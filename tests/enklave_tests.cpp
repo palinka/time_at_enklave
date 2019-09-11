@@ -31,10 +31,12 @@ TEST(parseDatetime, WithFailure) {
 
 // This test is rather poor. However, it assumes 5 valid files in configured folder.
 TEST(getRelevantFilePathsFromFolder, WithSuccess) {
-    auto files = get_relevant_file_paths_from_folder(enklave::config::folder_with_mails);
+    auto files = get_relevant_files(enklave::config::path_with_mails, enklave::config::relevant_files_regex);
     EXPECT_EQ(files.size(), 4);
 }
 
 TEST(getRelevantFilePathsFromFolder, FolderNotFound) {
-    EXPECT_THROW(get_relevant_file_paths_from_folder("someFolderThatSHOULDnotExist/never/ever"), std::experimental::filesystem::filesystem_error);
+    EXPECT_THROW(
+            get_relevant_files("someFolderThatSHOULDnotExist/never/ever", enklave::config::relevant_files_regex),
+            std::experimental::filesystem::filesystem_error);
 }
