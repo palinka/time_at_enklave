@@ -35,6 +35,10 @@ The program will use some test-files contained in 'tests/data/' by default. Howe
 ### Windows
 Use CMake to generate a Visual Studio project; tested with Visual Studio 2019.
 
+### CLion
+
+This repo contains the '.idea' folder used by the IDE CLion.
+
 # Dependencies and 3rd party
 
 [date.h](include/date.h) is included in folder 'includes/' for convenience. See [github](https://github.com/HowardHinnant/date) for original source.

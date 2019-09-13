@@ -1,6 +1,8 @@
 # Project
 data/
 
+# Visual Studio
+.vs
 
 # Jetbrains
 
