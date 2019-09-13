@@ -34,13 +34,10 @@ add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
         EXCLUDE_FROM_ALL)
 
 
-### Test that filesystem header actually is there and works
-# TODO Note that filesystem header can be in experimental, so this check may fail on newer compilers where
-# this is not the case.
+### Test that filesystem header actually is there and works.
 try_compile(HAS_FS "${CMAKE_BINARY_DIR}/temp"
         "${CMAKE_SOURCE_DIR}/tests/has_filesystem.cc"
-        CMAKE_FLAGS -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON
-        LINK_LIBRARIES stdc++fs)
+        CMAKE_FLAGS -DCMAKE_CXX_STANDARD=17 -DCMAKE_CXX_STANDARD_REQUIRED=ON)
 if(HAS_FS)
     message(STATUS "Compiler has filesystem support")
 else()
@@ -50,8 +47,8 @@ endif(HAS_FS)
 
 ### Finish
 add_executable(time_at_enklave_tests tests/enklave_tests.cpp)
-target_link_libraries(time_at_enklave_tests gtest_main stdc++fs)
+target_link_libraries(time_at_enklave_tests gtest_main)
 add_test(time_at_enklave_tests time_at_enklave_tests)
 
 add_executable(time_at_enklave main.cpp enklave.hpp config.hpp)
-target_link_libraries(time_at_enklave stdc++fs)
+target_link_libraries(time_at_enklave)

@@ -6,14 +6,21 @@
 #include <regex>
 #include <chrono>
 #include <set>
-// TODO Switch to a newer compiler.
-#include <experimental/filesystem>
 #include <optional>
 #include <algorithm>
 #include <numeric>
+
 // TODO Document usage of date-lib.
 #include "include/date.h"
 #include "config.hpp"
+
+// Filesystem needs some care on different compilers.
+#include <filesystem>
+#ifdef _WIN32
+namespace fs = std::experimental::filesystem::v1;
+#elif __linux__
+namespace fs = std::filesystem;
+#endif
 
 namespace enklave {
     using namespace std;
@@ -24,7 +31,6 @@ namespace enklave {
     using enklave_slot = pair<check_in_datetime, check_out_datetime>;
     using duration = std::chrono::duration<int>; // Let's use int for durations.
 
-    namespace fs = experimental::filesystem;
 
 /**
  * Get all filepaths of files in a folder where the filename matches a regex.
