@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ### Add googletest
-# TODO cmake provides a module for google test. However, it works also without for now.
+# cmake provides a module for google test. However, it works also without for now.
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)

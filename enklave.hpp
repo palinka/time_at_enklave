@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <numeric>
 
-// TODO Document usage of date-lib.
 #include "include/date.h"
 #include "config.hpp"
 
@@ -110,7 +109,7 @@ namespace enklave {
             }
         }
 
-        // TODO if a one of the two was forgotten, at least show user when!
+        // TODO if a one of the two was forgotten, at least show a user when!
         if (check_ins.size() != check_outs.size())
             throw "Number of check-ins and check-outs do not match!";
 

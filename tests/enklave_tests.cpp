@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "../enklave.hpp"
-#include "../config.hpp" // TODO Write a test to check sanity of this file!
+#include "../config.hpp"
 
 using namespace enklave;
 
