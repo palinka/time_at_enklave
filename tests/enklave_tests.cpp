@@ -3,6 +3,13 @@
 #include "../config.hpp"
 
 using namespace enklave;
+// Filesystem needs some care on different compilers.
+#include <filesystem>
+#ifdef _WIN32
+namespace fs = std::experimental::filesystem::v1;
+#elif __linux__
+namespace fs = std::filesystem;
+#endif
 
 // TODO: pass timezone offset to UTC via flags.
 TEST(parseDatetime, WithSuccess) {
@@ -32,5 +39,5 @@ TEST(getRelevantFilePathsFromFolder, WithSuccess) {
 TEST(getRelevantFilePathsFromFolder, FolderNotFound) {
     EXPECT_THROW(
             get_relevant_files("someFolderThatSHOULDnotExist/never/ever", enklave::config::relevant_files_regex),
-            std::experimental::filesystem::filesystem_error);
+            fs::filesystem_error);
 }
