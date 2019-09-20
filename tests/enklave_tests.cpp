@@ -5,39 +5,69 @@
 using namespace enklave;
 // Filesystem needs some care on different compilers.
 #include <filesystem>
+
 #ifdef _WIN32
 namespace fs = std::experimental::filesystem::v1;
 #elif __linux__
 namespace fs = std::filesystem;
 #endif
 
-// TODO: pass timezone offset to UTC via flags.
 TEST(parseDatetime, WithSuccess) {
-    using namespace date;
+    // Convert a string containing point in time to date::sys_seconds.
+    auto point_in_time = parse_datetime("X-Pm-Date: Fri, 13 Sep 2019 13:44:02 +0200").value();
 
-    // Convert a point in time from string to sys_seconds (alias for std::chrono::point_in_time_string).
-    auto point_in_time = parse_datetime("Confirmation_  Check in 2019-08-22T15_31_05+02_00.eml").value();
-
-    // Reconvert to a string.
-    // Add manually the timezone difference; automation not offered by used lib.
-    auto point_in_time_string = format("%F %T", point_in_time + 2h);
-    EXPECT_EQ("2019-08-22 15:31:05", point_in_time_string);
+    // Reconvert result to a string.
+    auto point_in_time_string = date::format("%F %T", point_in_time);
+    EXPECT_EQ("2019-09-13 13:44:02", point_in_time_string);
 }
 
 TEST(parseDatetime, WithFailure) {
     EXPECT_EQ(parse_datetime("somestring"), std::nullopt);
     // Test an impossible date.
-    EXPECT_EQ(parse_datetime("2019-99-22T15_31_05+02_00"), std::nullopt);
+    EXPECT_EQ(parse_datetime("X-Pm-Date: Fri, 99 Sep 2019 13:44:02 +0200"), std::nullopt);
 }
 
-// This test is rather poor. However, it assumes 5 valid files in configured folder.
-TEST(getRelevantFilePathsFromFolder, WithSuccess) {
-    auto files = get_relevant_files(enklave::config::path_with_mails, enklave::config::relevant_files_regex);
-    EXPECT_EQ(files.size(), 4);
+TEST(parseFile, IsCheckinAndNotCheckout) {
+    date::sys_seconds zero; // default init.
+    auto result = parse_file(enklave::config::path_with_mails + "/testfile_check_in.eml");
+    auto countit = result.in.time_since_epoch();
+    EXPECT_NE(result.in, zero);
+    EXPECT_EQ(result.out, zero);
 }
 
-TEST(getRelevantFilePathsFromFolder, FolderNotFound) {
-    EXPECT_THROW(
-            get_relevant_files("someFolderThatSHOULDnotExist/never/ever", enklave::config::relevant_files_regex),
-            fs::filesystem_error);
+
+TEST(parseFile, FileNotFound) {
+    EXPECT_THROW(parse_file("someFolderThatSHOULDnotExist/never/ever"), std::ios_base::failure);
+}
+
+TEST(parseFile, ManualyComputeResultOfOneCheckinAndCheckout) {
+    using namespace date;
+    auto in = parse_file(enklave::config::path_with_mails + "/testfile_check_in.eml").in;
+    auto out = parse_file(enklave::config::path_with_mails + "/testfile_check_out.eml").out;
+    //std::cout << "in: " << format("%F %T", in.when) << " out: " << format("%F %T", out.when);
+    auto result = out- in;
+    EXPECT_EQ("04:36:24", format("%T", result));
+}
+
+TEST(scanDirectory, WithSuccess) {
+    vector<check_in_or_out> results;
+    EXPECT_NO_THROW(results = scan_directory(enklave::config::path_with_mails));
+}
+
+TEST(scanDirectory, FolderNotFound) {
+    EXPECT_THROW(scan_directory("someFolderThatSHOULDnotExist/never/ever"), fs::filesystem_error);
+}
+
+TEST(computeTimeslots, WithSuccess) {
+    auto results = scan_directory(enklave::config::path_with_mails);
+    compute_timeslots(results);
+    std::cout << "hey";
+}
+
+TEST(computeDuration, WithSuccess) {
+    auto raw_data = scan_directory(enklave::config::path_with_mails);
+    auto timeslots = compute_timeslots(raw_data);
+    auto result = compute_duration(timeslots);
+    EXPECT_EQ("09:12:48", date::format("%T", result));
+    std::cout << "hey";
 }

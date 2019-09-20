@@ -44,8 +44,14 @@ This repo contains the '.idea' folder used by the IDE CLion.
 [date.h](include/date.h) is included in folder 'includes/' for convenience. See [github](https://github.com/HowardHinnant/date) for original source.
 
 ## TODOs
+* Get rid of config-file.
+* Find a better solution for the filesystem header and include spread across files.
 * If a check-in / check-out pair does not match, because a file is missing, the program exits instead of computing the other pairs.
 * Check compiler versions with cmake, e.g. gcc 8.0 is required for filesystem.
 * Add concurrency?
-* Open relevant files and search for sender instead of relying only on the filename.
+* Remove unnecessary std::
+* Ensure passing by ref is really not required.
 * Grab TODOs
+
+## Some learnings
+* 'using' is not a type definition, but a type alias. So it can't be combined in an elegant way with variants if two aliases use the same type. Unluckily the compiles informs about this not when declaring the variant, but when std::get<type>'ing the value.
