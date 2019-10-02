@@ -99,45 +99,66 @@ namespace enklave {
         }
     }
 
-    // TODO https://www.walletfox.com/course/patternmatchingcpp17.php
-    // Assume all files have the same structure, so parse top to bottom.
+    /** Parse a file from top to bottom.
+     *
+     * The returned object contains the information if it was a check-in or a check-out and when it happened.
+     * It function can throw runtime_errors for various reasons.
+     *
+     * @param f Path to a file
+     * @return check_in_or_out. TODO link to type doc.
+     */
+
     check_in_or_out parse_file(const fs::path &f) noexcept(false) {
         const regex is_from_enklave_regex{"header.from=enklave.de"};
         const regex date_regex("X-Pm-Date:");
         const regex check_in_regex("Check_in");
+        const regex check_out_regex("Check out");
 
         check_in_or_out result;
         ifstream ifs{f};
         string line;
         bool isCheckIn = false;
+        bool isCheckOut = false;
 
         // First line must in file must contain is_from_enklave_regex
-        if (!getline(ifs, line))
-            ifs.exceptions(ifstream::failbit); // Throw if stream fails, e.g. file not exists or is empty.
+        if (!getline(ifs, line)) {
+            throw runtime_error{"Could not open file or get the first line: " + f.string()};
+        }
 
-        // TODO an empty check_in_or_out could also be returned.
         if (!regex_search(line, is_from_enklave_regex)) {
             throw runtime_error{"Parsed file is not an email from enklave: " + f.string()};
         }
 
+        /* After the first line was parsed, read the rest of the file from top to bottom and assume:
+         * - First check_in_regex OR check_out_regex appears in file determining with event it was.
+         * - In the lines afterwards the datetime of the event is found.
+         */
         while (getline(ifs, line)) {
-            // Is it a check in?
-            if (regex_search(line, check_in_regex)) {
-                cout << "Found a check-in: " << line << '\n';
+            // Does the actual line identify a check-in?
+            if (regex_search(line, check_in_regex))
                 isCheckIn = true;
-            }
 
-            // TODO Catch case where it is not a check-in nor a check-out etc.?
+            // Does the actual line identify a check-out?
+            if (regex_search(line, check_out_regex))
+                isCheckOut = true;
 
+            // If a valid datetime pattern is found.
             if (regex_search(line, date_regex)) {
+                if (!isCheckIn && !isCheckOut) {
+                    throw runtime_error{"Parsed file is neither a check-in nor a check-out: " + f.string()};
+                } // Assume no file that is a check-in AND a check-out exists.
+
+                // Parse datetime.
                 auto datetime = parse_datetime(line);
-                if (!datetime)
-                    cerr << "Failed to parse datetime of file: " << f << '\n';
-                if (isCheckIn) {
-                    result.in = datetime.value();
-                } else {
-                    result.out = datetime.value();
+                if (!datetime) {
+                    throw runtime_error{"Datetime could not be parsed: " + f.string()};
                 }
+
+                if (isCheckIn)
+                    result.in = datetime.value();
+                if (isCheckOut)
+                    result.out = datetime.value();
+                result.file = f; // Save filepath of source. TODO Should be ref?
             }
         }
         return result;
