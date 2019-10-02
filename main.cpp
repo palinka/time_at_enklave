@@ -1,26 +1,31 @@
 #include <iostream>
 #include "enklave.hpp"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     using namespace enklave;
 
-    // TODO Use a smarter init.
     string path_with_mails{enklave::config::path_with_mails};
-    if(argc > 1) // If path is passed in by first argument, override configured path.
+
+    if (argc > 1) // If path is passed in by first argument, override configured path.
         path_with_mails = argv[1];
 
-    auto results = scan_directory(enklave::config::path_with_mails);
+    auto found_events = scan_directory(path_with_mails);
 
-    // Inform user if no files were found.
-    /*
-    if(files_paths.empty()) {
-        std::cerr << "No relevant files found in folder: " << path_with_mails << '\n';
-        return 1;
+    // Provide some user feedback:
+    std::cout << "The following events were found:" << std::endl;
+    for (auto &x : found_events) {
+        std::cout << x;
     }
-    */
 
-    //auto result = compute_timeslots(parse(files_paths));
-    //std::cout << "Time spent at enklave: " << date::format("%T", result) << '\n';
+    if (found_events.size() < 2) {
+        std::cerr << "Scanned directory does not contain files with at least one check-in and one check-out."
+                  << std::endl;
+        return 0;
+    }
 
+    auto timeslots = compute_timeslots(found_events);
+    auto result = compute_duration(timeslots);
+
+    std::cout << "Time spent at enklave: " << date::format("%T", result) << '\n';
     return 0;
 }

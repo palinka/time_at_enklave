@@ -44,6 +44,9 @@ This repo contains the '.idea' folder used by the IDE CLion.
 [date.h](include/date.h) is included in folder 'includes/' for convenience. See [github](https://github.com/HowardHinnant/date) for original source.
 
 ## TODOs
+* Filter out impossible events, e.g. 2 sequential check-ins.
+* Use either std::enld or \n
+* unknown file: Failure
 * Get rid of config-file.
 * Find a better solution for the filesystem header and include spread across files.
 * If a check-in / check-out pair does not match, because a file is missing, the program exits instead of computing the other pairs.
@@ -54,4 +57,4 @@ This repo contains the '.idea' folder used by the IDE CLion.
 * Grab TODOs
 
 ## Some learnings
-* 'using' is not a type definition, but a type alias. So it can't be combined in an elegant way with variants if two aliases use the same type. Unluckily the compiles informs about this not when declaring the variant, but when std::get<type>'ing the value.
+* 'using' is not a type definition, but a type alias. So it can't be combined in an elegant way with variants if two aliases use the same type. Unluckily the compiler informs about this not when declaring the variant, but when std::get<type>'ing the value.
