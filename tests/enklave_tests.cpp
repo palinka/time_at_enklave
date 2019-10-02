@@ -30,9 +30,7 @@ TEST(parseDatetime, WithFailure) {
 TEST(parseFile, IsCheckinAndNotCheckout) {
     date::sys_seconds zero; // default init.
     auto result = parse_file(enklave::config::path_with_mails + "/testfile_check_in.eml");
-    auto countit = result.in.time_since_epoch();
-    EXPECT_NE(result.in, zero);
-    EXPECT_EQ(result.out, zero);
+    EXPECT_NE(result.get_when(), zero);
 }
 
 
@@ -46,15 +44,14 @@ TEST(parseFile, SomeOtherFileFromEnklave) {
 
 TEST(parseFile, ManualyComputeResultOfOneCheckinAndCheckout) {
     using namespace date;
-    auto in = parse_file(enklave::config::path_with_mails + "/testfile_check_in.eml").in;
-    auto out = parse_file(enklave::config::path_with_mails + "/testfile_check_out.eml").out;
-    //std::cout << "in: " << format("%F %T", in.when) << " out: " << format("%F %T", out.when);
+    auto in = parse_file(enklave::config::path_with_mails + "/testfile_check_in.eml").get_when();
+    auto out = parse_file(enklave::config::path_with_mails + "/testfile_check_out.eml").get_when();
     auto result = out- in;
     EXPECT_EQ("04:36:24", format("%T", result));
 }
 
 TEST(scanDirectory, WithSuccess) {
-    vector<check_in_or_out> results;
+    vector<enklave_event> results;
     EXPECT_NO_THROW(results = scan_directory(enklave::config::path_with_mails));
 }
 

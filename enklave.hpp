@@ -27,57 +27,81 @@ namespace fs = std::filesystem;
 namespace enklave {
     using namespace std;
 
-    // 0 sys_seconds is used as default value check_in_or_out.
-    constexpr date::sys_seconds zero(std::chrono::seconds(0));
+    // Let's use int for durations.
+    using duration = chrono::duration<int>;
 
-    // TODO Add relevant keywords, make it a class with private members and drag zero in.
+    // Timeslots consist in a pair of a check-in and a check-out.
+    // TODO use proper types instead of sys_seconds.
+    using timeslot = pair<date::sys_seconds, date::sys_seconds>;
+
     struct check_in_or_out {
-        //variant<date::sys_seconds, date::sys_seconds> check_in_or_out;
+        date::sys_seconds when;
+        fs::path file;
+    };
 
-        date::sys_seconds in = zero;
-        date::sys_seconds out = zero;
-        fs::path file;  // TODO Init?
+    struct check_in : check_in_or_out {
+    };
 
-        date::sys_seconds get_value() const {
-            if (in != zero)
-                return in;
-            if (out != zero)
-                return out;
-            return zero;
+    struct check_out : check_in_or_out {
+    };
+
+    // Instead of holding one member variable for check-in and one for check-out in a class , a variant can be used.
+    // This also eliminates determining which event an instance holds via checking against values, e.g. considering
+    // date::sys_seconds zero(std::chrono::seconds(0)) being "this member is not used/initialized", so it must be
+    // the other member.
+    class enklave_event {
+    private:
+        variant<check_in, check_out> m_check_in_or_out;
+
+    public:
+        date::sys_seconds get_when() const {
+            return std::visit([](auto &&event) { return event.when; }, m_check_in_or_out);
         }
 
-        friend std::ostream &operator<<(std::ostream &out, const check_in_or_out &event);
+        fs::path get_filepath() const {
+            return std::visit([](auto &&event) { return event.file; }, m_check_in_or_out);
+        }
 
-        bool is_check_in() {
-            if (in != zero)
-                return true;
-            return false;
+        // Using operator= for implicit conversations via assignment.
+        enklave_event &operator=(check_in event) {
+            m_check_in_or_out = event;
+            return *this;
+        }
+
+        enklave_event &operator=(check_out event) {
+            m_check_in_or_out = event;
+            return *this;
+        }
+
+        friend std::ostream &operator<<(std::ostream &out, const enklave_event &event);
+
+        bool is_check_in() const {
+            return std::holds_alternative<check_in>(m_check_in_or_out);
         };
     };
 
-    std::ostream &operator<<(std::ostream &out, const check_in_or_out &event) {
-        if (event.in != zero)
-            cout << "Check-in  at: " << date::format("%F %T", event.get_value()) << "\n";
-        if (event.out != zero)
-            cout << "Check-out at: " << date::format("%F %T", event.get_value()) << "\n";
-        out << "File: " << event.file << '\n';
+    std::ostream &operator<<(std::ostream &out, const enklave_event &event) {
+        if (event.is_check_in()) {
+            out << "Check-in  at: " << date::format("%F %T", event.get_when()) << "\n";
+        } else {
+            out << "Check-out at: " << date::format("%F %T", event.get_when()) << "\n";
+        }
+        out << "File: " << event.get_filepath().string() << '\n';
         return out;
     }
-    // From check_in_or_out's timeslots are computed.
-    using timeslot = pair<date::sys_seconds, date::sys_seconds>;
-    using duration = chrono::duration<int>; // Let's use int for durations.
 
-/** TODO Update doc, timezone will be ingored.
- *
- * Converts a string containing a ISO 8601-like date to the date::sys_seconds.
- *
- * ISO 8601-like strings that use "_" instead of ":" are valid input, e.g. "Confirmation 2019-08-22T15_31_05+02_00.eml".
- *
- * Returns an optional to avoid any confusions with '0' which is a valid value for date::sys_seconds.
- *
- * @param str String in ISO 8601-like format.
- * @return std::optional<date::sys_seconds> in UTC.
- */
+
+    /** Converts a string containing a ISO 8601-like date to date::sys_seconds.
+    *
+    * ISO 8601-like strings that use "_" instead of ":" are valid input, e.g. "Confirmation 2019-08-22T15_31_05+02_00.eml".
+    *
+    * Returns an optional to avoid any confusions with '0' which is a valid value for date::sys_seconds.
+    *
+    * Note: timezones will be stripped away.
+    *
+    * @param input String in ISO 8601-like format.
+    * @return std::optional<date::sys_seconds>.
+    */
     std::optional<date::sys_seconds> parse_datetime(const string &input) noexcept {
         using namespace date;
 
@@ -108,13 +132,14 @@ namespace enklave {
      * @return check_in_or_out. TODO link to type doc.
      */
 
-    check_in_or_out parse_file(const fs::path &f) noexcept(false) {
+    enklave_event parse_file(const fs::path &f) noexcept(false) {
+        std::cout << "Parsing file: " << f << '\n';
         const regex is_from_enklave_regex{"header.from=enklave.de"};
         const regex date_regex("X-Pm-Date:");
         const regex check_in_regex("Check_in");
         const regex check_out_regex("Check out");
 
-        check_in_or_out result;
+        enklave_event result;
         ifstream ifs{f};
         string line;
         bool isCheckIn = false;
@@ -155,30 +180,27 @@ namespace enklave {
                 }
 
                 if (isCheckIn)
-                    result.in = datetime.value();
+                    result = check_in{date::sys_seconds{datetime.value()}, f};
                 if (isCheckOut)
-                    result.out = datetime.value();
-                result.file = f; // Save filepath of source. TODO Should be ref?
+                    result = check_out{date::sys_seconds{datetime.value()}, f};
             }
         }
         return result;
     }
 
     /** Scans all files in a directory and returns a vector with parsed check_in_or_out.
-     * TODO Document type.
      *
      * @param p Path do a directory.
      * @return Vector with all check_in_or_out's.
      */
-    vector<check_in_or_out> scan_directory(const fs::path &p) {
+    vector<enklave_event> scan_directory(const fs::path &p) {
         cout << "Scanning for relevant files in: " << p << ":\n";
-        vector<check_in_or_out> enklave_events;
-        check_in_or_out ee;
+        vector<enklave_event> enklave_events;
+        enklave_event ee;
         for (const fs::directory_entry &x: fs::directory_iterator(p)) {
             const fs::path &f = x;
             // TODO Use a std::iterator and a predicate function.
             if (f.extension() == ".eml") {
-                std::cout << "Parsing file: " << f << '\n';
                 try {
                     ee = parse_file(f);
                     enklave_events.push_back(ee);
@@ -192,7 +214,7 @@ namespace enklave {
 
     // Computing timeslots actually wastes space, because vector<check_in_or_outs> could be directly used.
     // However, this intermediate steps appears more maintainable to me.
-    vector<timeslot> compute_timeslots(vector<check_in_or_out> &all_in_or_outs) noexcept(false) {
+    vector<timeslot> compute_timeslots(vector<enklave_event> &all_in_or_outs) noexcept(false) {
         vector<timeslot> result;
 
         if (all_in_or_outs.size() < 2) {
@@ -222,8 +244,6 @@ namespace enklave {
         unique(all_in_or_outs.begin(), all_in_or_outs.end(), impossible_events_predicate);
         */
 
-
-        // TODO rename check-in and check-out to event.
         if (all_in_or_outs.size() % 2 != 0) {
             throw logic_error("Check-ins and check-outs are pairs. The provided dataset does not have an even size.");
         }
@@ -234,7 +254,7 @@ namespace enklave {
          */
         for (auto check_in = all_in_or_outs.begin(); check_in != all_in_or_outs.end(); ++check_in) {
             auto check_out = next(check_in);
-            result.push_back(timeslot{check_in->get_value(), check_out->get_value()});
+            result.push_back(timeslot{check_in->get_when(), check_out->get_when()});
             ++check_in;
         }
         // TODO Check for size > 1;
@@ -247,7 +267,7 @@ namespace enklave {
                 cerr << "Removed one!" << '\n';
             } else {
                 check_in->print_value();
-                result.emplace_back(timeslot{check_in->get_value(), check_out->get_value()});
+                result.emplace_back(timeslot{check_in->get_value(), check_out->when()});
             }
             check_in = next(check_in, 2);
         }
