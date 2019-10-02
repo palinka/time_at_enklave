@@ -37,7 +37,11 @@ TEST(parseFile, IsCheckinAndNotCheckout) {
 
 
 TEST(parseFile, FileNotFound) {
-    EXPECT_THROW(parse_file("someFolderThatSHOULDnotExist/never/ever"), std::ios_base::failure);
+    EXPECT_THROW(parse_file("someFolderThatSHOULDnotExist/never/ever"), std::runtime_error);
+}
+
+TEST(parseFile, SomeOtherFileFromEnklave) {
+    EXPECT_THROW(parse_file(enklave::config::path_with_mails + "/testfile_enklave_other.eml"), std::runtime_error);
 }
 
 TEST(parseFile, ManualyComputeResultOfOneCheckinAndCheckout) {
@@ -60,14 +64,15 @@ TEST(scanDirectory, FolderNotFound) {
 
 TEST(computeTimeslots, WithSuccess) {
     auto results = scan_directory(enklave::config::path_with_mails);
-    compute_timeslots(results);
-    std::cout << "hey";
+    auto slots = compute_timeslots(results);
+    auto [in, out] = slots.front();
+    auto first_slot_duration = out - in;
+    EXPECT_EQ("04:36:24", date::format("%T", first_slot_duration));
 }
 
 TEST(computeDuration, WithSuccess) {
-    auto raw_data = scan_directory(enklave::config::path_with_mails);
-    auto timeslots = compute_timeslots(raw_data);
+    auto found_events = scan_directory(enklave::config::path_with_mails);
+    auto timeslots = compute_timeslots(found_events);
     auto result = compute_duration(timeslots);
     EXPECT_EQ("09:12:48", date::format("%T", result));
-    std::cout << "hey";
 }
