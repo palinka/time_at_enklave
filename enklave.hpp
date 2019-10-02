@@ -164,6 +164,12 @@ namespace enklave {
         return result;
     }
 
+    /** Scans all files in a directory and returns a vector with parsed check_in_or_out.
+     * TODO Document type.
+     *
+     * @param p Path do a directory.
+     * @return Vector with all check_in_or_out's.
+     */
     vector<check_in_or_out> scan_directory(const fs::path &p) {
         cout << "Scanning for relevant files in: " << p << ":\n";
         vector<check_in_or_out> enklave_events;
@@ -186,8 +192,12 @@ namespace enklave {
 
     // Computing timeslots actually wastes space, because vector<check_in_or_outs> could be directly used.
     // However, this intermediate steps appears more maintainable to me.
-    vector<timeslot> compute_timeslots(vector<check_in_or_out> &all_in_or_outs) noexcept {
+    vector<timeslot> compute_timeslots(vector<check_in_or_out> &all_in_or_outs) noexcept(false) {
         vector<timeslot> result;
+
+        if (all_in_or_outs.size() < 2) {
+            throw logic_error("At least 2 events must be provided.");
+        }
 
         // Sort by time.
         // TODO make it an operator.
@@ -197,13 +207,55 @@ namespace enklave {
 
         sort(all_in_or_outs.begin(), all_in_or_outs.end(), sorting_function);
 
+
+        /* TODO impossible events
+        auto impossible_events_predicate = [](check_in_or_out first, check_in_or_out second) {
+            if ((first.is_check_in() && second.is_check_in()) || (!first.is_check_in() && !second.is_check_in())) {
+                cerr << "removing ONE: ";
+                first.print_value();
+                return false;
+            } else {
+                return true;
+            }
+        };
         // TODO Find adjacent in/out and remove them.
+        unique(all_in_or_outs.begin(), all_in_or_outs.end(), impossible_events_predicate);
+        */
 
-        for (auto current = all_in_or_outs.begin(); current != all_in_or_outs.end(); ++current) {
-            result.push_back(timeslot{current->get_value(), next(current)->get_value()});
-            ++current;
+
+        // TODO rename check-in and check-out to event.
+        if (all_in_or_outs.size() % 2 != 0) {
+            throw logic_error("Check-ins and check-outs are pairs. The provided dataset does not have an even size.");
         }
+        /* Copy elements from vector<check_in_or_out> to vector<pair<date::sys_seconds, date::sys_seconds>>
+         * where the first element of the pair represents a check-in and the second a check-out.
+         * I am not aware of an std::algorithm iterating a container in x[n] / x[n+1] fashion.
+         * Above check ensures the manual loop will always terminate.
+         */
+        for (auto check_in = all_in_or_outs.begin(); check_in != all_in_or_outs.end(); ++check_in) {
+            auto check_out = next(check_in);
+            result.push_back(timeslot{check_in->get_value(), check_out->get_value()});
+            ++check_in;
+        }
+        // TODO Check for size > 1;
 
+        /*
+        auto check_in = all_in_or_outs.begin();
+        auto check_out = next(check_in);
+        while (check_in != all_in_or_outs.end()) {
+            if (check_in->is_check_in() && check_out->is_check_in()) {
+                cerr << "Removed one!" << '\n';
+            } else {
+                check_in->print_value();
+                result.emplace_back(timeslot{check_in->get_value(), check_out->get_value()});
+            }
+            check_in = next(check_in, 2);
+        }
+        */
+
+        if (all_in_or_outs.size() / 2 != result.size()) {
+            throw logic_error("The computed timeslots must be half of the size of all check-ins and check-outs.");
+        }
         return result;
     }
 
