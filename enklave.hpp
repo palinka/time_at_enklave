@@ -10,12 +10,14 @@
 #include <algorithm>
 #include <numeric>
 #include <fstream>
+#include <variant>
 
 #include "include/date.h"
 #include "config.hpp"
 
 // Filesystem needs some care on different compilers.
 #include <filesystem>
+
 #ifdef _WIN32
 namespace fs = std::experimental::filesystem::v1;
 #elif __linux__
@@ -25,15 +27,10 @@ namespace fs = std::filesystem;
 namespace enklave {
     using namespace std;
 
-    // TODO use inheritance?
+    // 0 sys_seconds is used as default value check_in_or_out.
+    constexpr date::sys_seconds zero(std::chrono::seconds(0));
 
-    // Default value for sys_seconds is '0'.
-    // Using the typesystem (inheritance, optionals and/or variants) to have clearer
-    // types indicating "no value" resulted in overblown code. So, declare "zero" in namespace scope to indicate
-    // "no value" clearly.
-    constexpr date::sys_seconds zero;
-
-    // TODO Add relevant keywords.
+    // TODO Add relevant keywords, make it a class with private members and drag zero in.
     struct check_in_or_out {
         date::sys_seconds in;
         date::sys_seconds out;
