@@ -32,18 +32,37 @@ namespace enklave {
 
     // TODO Add relevant keywords, make it a class with private members and drag zero in.
     struct check_in_or_out {
-        date::sys_seconds in;
-        date::sys_seconds out;
+        //variant<date::sys_seconds, date::sys_seconds> check_in_or_out;
 
-        date::sys_seconds get_value() {
+        date::sys_seconds in = zero;
+        date::sys_seconds out = zero;
+        fs::path file;  // TODO Init?
+
+        date::sys_seconds get_value() const {
             if (in != zero)
                 return in;
             if (out != zero)
                 return out;
             return zero;
         }
+
+        friend std::ostream &operator<<(std::ostream &out, const check_in_or_out &event);
+
+        bool is_check_in() {
+            if (in != zero)
+                return true;
+            return false;
+        };
     };
 
+    std::ostream &operator<<(std::ostream &out, const check_in_or_out &event) {
+        if (event.in != zero)
+            cout << "Check-in  at: " << date::format("%F %T", event.get_value()) << "\n";
+        if (event.out != zero)
+            cout << "Check-out at: " << date::format("%F %T", event.get_value()) << "\n";
+        out << "File: " << event.file << '\n';
+        return out;
+    }
     // From check_in_or_out's timeslots are computed.
     using timeslot = pair<date::sys_seconds, date::sys_seconds>;
     using duration = chrono::duration<int>; // Let's use int for durations.
@@ -136,8 +155,8 @@ namespace enklave {
                 try {
                     ee = parse_file(f);
                     enklave_events.push_back(ee);
-                } catch (runtime_error e) {
-                    cerr << e.what(); // e.g. file could be opened, but parsing did not meet criteria.
+                } catch (runtime_error &e) {
+                    cerr << e.what() << '\n'; // e.g. file could be opened, but parsing did not meet criteria.
                 } // Let caller catch all other exceptions, e.g. from filesystem.
             }
         }
