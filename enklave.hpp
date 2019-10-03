@@ -51,11 +51,11 @@ namespace enklave {
 
     public:
         date::sys_seconds get_when() const {
-            return std::visit([](auto &&event) { return event.when; }, m_check_in_or_out);
+            return visit([](auto &&event) { return event.when; }, m_check_in_or_out);
         }
 
         fs::path get_filepath() const {
-            return std::visit([](auto &&event) { return event.file; }, m_check_in_or_out);
+            return visit([](auto &&event) { return event.file; }, m_check_in_or_out);
         }
 
         // Using operator= for implicit conversations via assignment.
@@ -70,17 +70,17 @@ namespace enklave {
         }
 
         bool is_check_in() const {
-            return std::holds_alternative<check_in>(m_check_in_or_out);
+            return holds_alternative<check_in>(m_check_in_or_out);
         };
     };
 
-    std::ostream &operator<<(std::ostream &out, const enklave_event &event) {
+    ostream &operator<<(ostream &out, const enklave_event &event) {
         if (event.is_check_in()) {
-            out << "Check-in  at: " << date::format("%F %T", event.get_when()) << "\n";
+            out << "Check-in  at: " << date::format("%F %T", event.get_when()) << endl;
         } else {
-            out << "Check-out at: " << date::format("%F %T", event.get_when()) << "\n";
+            out << "Check-out at: " << date::format("%F %T", event.get_when()) << endl;
         }
-        out << "File: " << event.get_filepath().string() << '\n';
+        out << "File: " << event.get_filepath().string() << endl;
         return out;
     }
 
@@ -98,7 +98,7 @@ namespace enklave {
     * @param input String in ISO 8601-like format.
     * @return std::optional<date::sys_seconds>.
     */
-    std::optional<date::sys_seconds> parse_datetime(const string &input) noexcept {
+    optional<date::sys_seconds> parse_datetime(const string &input) noexcept {
         using namespace date;
 
         // Reduce input string to datetime.
@@ -129,7 +129,7 @@ namespace enklave {
      */
 
     enklave_event parse_file(const fs::path &f) noexcept(false) {
-        //std::cout << "Parsing file: " << f << '\n';
+        //cout << "Parsing file: " << f << endl;
         const regex is_from_enklave_regex{"header.from=enklave.de"};
         const regex date_regex("X-Pm-Date:");
         const regex check_in_regex("Check_in");
@@ -201,7 +201,7 @@ namespace enklave {
                     ee = parse_file(f);
                     enklave_events.push_back(ee);
                 } catch (runtime_error &e) {
-                    cerr << e.what() << '\n'; // e.g. file could be opened, but parsing did not meet criteria.
+                    cerr << e.what() << endl; // e.g. file could be opened, but parsing did not meet criteria.
                 } // Let the caller catch all other exceptions, e.g. from filesystem.
             }
         }
@@ -261,7 +261,7 @@ namespace enklave {
          */
         for (auto check_in = events.begin(); check_in != events.end(); ++check_in) {
             auto check_out = next(check_in);
-            result.push_back(make_pair(std::ref(*check_in), std::ref(*check_out)));
+            result.push_back(make_pair(ref(*check_in), ref(*check_out)));
             // Most probably this would be more readable:
             // result.push_back(timeslot{*check_in, *check_out});
             ++check_in;
@@ -274,7 +274,7 @@ namespace enklave {
     }
 
     duration compute_duration(vector<timeslot> slots) {
-        return std::accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, timeslot slot) {
+        return accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, timeslot slot) {
             return accumulator + (slot.second.get_when() - slot.first.get_when());
         });
 

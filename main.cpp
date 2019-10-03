@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     auto found_events = scan_directory(path_with_mails);
 
     // Provide some user feedback:
-    std::cout << "The following events were found:" << std::endl;
+    std::cout << found_events.size() << " events were found:" << std::endl;
     for (auto &x : found_events) {
         std::cout << x;
     }
@@ -26,6 +26,6 @@ int main(int argc, char *argv[]) {
     auto timeslots = compute_timeslots(found_events);
     auto result = compute_duration(timeslots);
 
-    std::cout << "Time spent at enklave: " << date::format("%T", result) << '\n';
+    std::cout << "Time spent at enklave: " << date::format("%T", result) << std::endl;
     return 0;
 }
