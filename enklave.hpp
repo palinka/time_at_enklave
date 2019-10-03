@@ -30,7 +30,6 @@ namespace enklave {
     // Let's use int for durations.
     using duration = chrono::duration<int>;
 
-
     struct check_in_or_out {
         date::sys_seconds when;
         fs::path file;
@@ -211,40 +210,48 @@ namespace enklave {
         return enklave_events;
     }
 
-    // Computing timeslots actually wastes space, because vector<check_in_or_outs> could be directly used.
-    // However, this intermediate steps appears more maintainable to me.
-    vector<timeslot> compute_timeslots(vector<enklave_event> &all_in_or_outs) noexcept(false) {
+    // TODO rename all_in_or_outs.
+    vector<timeslot> compute_timeslots(vector<enklave_event> &events) noexcept(false) {
         vector<timeslot> result;
 
-        if (all_in_or_outs.size() < 2) {
+        if (events.size() < 2) {
             throw logic_error("At least 2 events must be provided.");
         }
 
         // Sort by time.
         // TODO make it an operator.
-        auto sorting_function = [](check_in_or_out &c1, check_in_or_out &c2) {
-            return c1.get_value() < c2.get_value();
+        auto sorting_function = [](enklave_event &c1, enklave_event &c2) {
+            return c1.get_when() < c2.get_when();
         };
 
-        sort(all_in_or_outs.begin(), all_in_or_outs.end(), sorting_function);
+        sort(events.begin(), events.end(), sorting_function);
 
-
-        /* TODO impossible events
-        auto impossible_events_predicate = [](check_in_or_out first, check_in_or_out second) {
+        auto impossible_event_predicate = [](const enklave_event &first, const enklave_event &second) {
             if ((first.is_check_in() && second.is_check_in()) || (!first.is_check_in() && !second.is_check_in())) {
-                cerr << "removing ONE: ";
-                first.print_value();
-                return false;
-            } else {
                 return true;
+            } else {
+                return false;
             }
         };
-        // TODO Find adjacent in/out and remove them.
-        unique(all_in_or_outs.begin(), all_in_or_outs.end(), impossible_events_predicate);
-        */
 
-        if (all_in_or_outs.size() % 2 != 0) {
-            throw logic_error("Check-ins and check-outs are pairs. The provided dataset does not have an even size.");
+        // Deal with forgotten check-in's or check-out's. Such missing events result in adjacent events of the same
+        // type in the time-sorted vector. When, e.g. two check-in's follow in a row, simply keep the latest.
+        auto it = events.begin();
+        do {
+            it = adjacent_find(it, events.end(), impossible_event_predicate);
+            if (it != events.end()) {
+                cerr << "The following event is impossible and thus removed from computation:" << endl;
+                cerr << *it;
+                it = events.erase(it);
+            }
+
+        } while (it != events.end());
+
+        if (events.size() % 2 != 0) {
+            cerr << "The last event in the list is removed, it misses its check-out." << endl;
+            cerr << events.back();
+            events.pop_back();
+            //throw logic_error("Check-ins and check-outs are pairs. The provided dataset does not have an even size.");
         }
 
         /* Arrange vector with holding single events in pairs such that each pair represents a timeslot.
@@ -256,30 +263,15 @@ namespace enklave {
          *
          * Note: this loop iterates on container type enklave_event.
          */
-        for (auto check_in = all_in_or_outs.begin(); check_in != all_in_or_outs.end(); ++check_in) {
+        for (auto check_in = events.begin(); check_in != events.end(); ++check_in) {
             auto check_out = next(check_in);
             result.push_back(make_pair(std::ref(*check_in), std::ref(*check_out)));
             // Most probably this would be more readable:
             // result.push_back(timeslot{*check_in, *check_out});
             ++check_in;
         }
-        // TODO Check for size > 1;
 
-        /*
-        auto check_in = all_in_or_outs.begin();
-        auto check_out = next(check_in);
-        while (check_in != all_in_or_outs.end()) {
-            if (check_in->is_check_in() && check_out->is_check_in()) {
-                cerr << "Removed one!" << '\n';
-            } else {
-                check_in->print_value();
-                result.emplace_back(timeslot{check_in->get_value(), check_out->when()});
-            }
-            check_in = next(check_in, 2);
-        }
-        */
-
-        if (all_in_or_outs.size() / 2 != result.size()) {
+        if (events.size() / 2 != result.size()) {
             throw logic_error("The computed timeslots must be half of the size of all check-ins and check-outs.");
         }
         return result;
