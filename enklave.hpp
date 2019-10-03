@@ -30,9 +30,6 @@ namespace enklave {
     // Let's use int for durations.
     using duration = chrono::duration<int>;
 
-    // Timeslots consist in a pair of a check-in and a check-out.
-    // TODO use proper types instead of sys_seconds.
-    using timeslot = pair<date::sys_seconds, date::sys_seconds>;
 
     struct check_in_or_out {
         date::sys_seconds when;
@@ -90,6 +87,8 @@ namespace enklave {
         return out;
     }
 
+    // Timeslots consist in a pair of a check-in and a check-out.
+    using timeslot = pair<enklave_event&, enklave_event&>;
 
     /** Converts a string containing a ISO 8601-like date to date::sys_seconds.
     *
@@ -254,7 +253,9 @@ namespace enklave {
          */
         for (auto check_in = all_in_or_outs.begin(); check_in != all_in_or_outs.end(); ++check_in) {
             auto check_out = next(check_in);
-            result.push_back(timeslot{check_in->get_when(), check_out->get_when()});
+            result.push_back(make_pair(std::ref(*check_in), std::ref(*check_out)));
+            // Most probably this would be more readable:
+            // result.push_back(timeslot{*check_in, *check_out});
             ++check_in;
         }
         // TODO Check for size > 1;
@@ -280,8 +281,8 @@ namespace enklave {
     }
 
     duration compute_duration(vector<timeslot> slots) {
-        return std::accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, auto slot) {
-            return accumulator + (slot.second - slot.first);
+        return std::accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, timeslot slot) {
+            return accumulator + (slot.second.get_when() - slot.first.get_when());
         });
 
     }
