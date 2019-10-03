@@ -69,8 +69,6 @@ namespace enklave {
             return *this;
         }
 
-        friend std::ostream &operator<<(std::ostream &out, const enklave_event &event);
-
         bool is_check_in() const {
             return std::holds_alternative<check_in>(m_check_in_or_out);
         };
@@ -86,8 +84,8 @@ namespace enklave {
         return out;
     }
 
-    // Timeslots consist in a pair of a check-in and a check-out.
-    using timeslot = pair<enklave_event&, enklave_event&>;
+    // Timeslots consist in a pair of a check-in and a check-out contained in type enklave_event.
+    using timeslot = pair<enklave_event &, enklave_event &>;
 
     /** Converts a string containing a ISO 8601-like date to date::sys_seconds.
     *
@@ -131,7 +129,7 @@ namespace enklave {
      */
 
     enklave_event parse_file(const fs::path &f) noexcept(false) {
-        std::cout << "Parsing file: " << f << '\n';
+        //std::cout << "Parsing file: " << f << '\n';
         const regex is_from_enklave_regex{"header.from=enklave.de"};
         const regex date_regex("X-Pm-Date:");
         const regex check_in_regex("Check_in");
@@ -204,7 +202,7 @@ namespace enklave {
                     enklave_events.push_back(ee);
                 } catch (runtime_error &e) {
                     cerr << e.what() << '\n'; // e.g. file could be opened, but parsing did not meet criteria.
-                } // Let caller catch all other exceptions, e.g. from filesystem.
+                } // Let the caller catch all other exceptions, e.g. from filesystem.
             }
         }
         return enklave_events;
@@ -254,10 +252,8 @@ namespace enklave {
             //throw logic_error("Check-ins and check-outs are pairs. The provided dataset does not have an even size.");
         }
 
-        /* Arrange vector with holding single events in pairs such that each pair represents a timeslot.
+        /* Arrange vector holding single events in pairs such that each pair represents a timeslot.
          * The first element of the pair represents a check-in and the second the corresponding check-out.
-         * I am not aware of any std::algorithm iterating a container where x[n] and x[n+1] is available in the
-         * function body such that I employ a manual loop.
          *
          * Above check ensures the manual loop will always terminate.
          *
