@@ -64,12 +64,12 @@ TEST(computeTimeslots, WithSuccess) {
     auto slots = compute_timeslots(results);
     auto [in, out] = slots.front();
     auto first_slot_duration = out.get_when() - in.get_when();
-    EXPECT_EQ("04:36:24", date::format("%T", first_slot_duration));
+    EXPECT_EQ("03:36:24", date::format("%T", first_slot_duration));
 }
 
 TEST(computeDuration, WithSuccess) {
     auto found_events = scan_directory(enklave::config::path_with_mails);
     auto timeslots = compute_timeslots(found_events);
     auto result = compute_duration(timeslots);
-    EXPECT_EQ("09:12:48", date::format("%T", result));
+    EXPECT_EQ("11:12:48", date::format("%T", result));
 }
