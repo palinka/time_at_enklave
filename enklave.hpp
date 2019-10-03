@@ -125,10 +125,10 @@ namespace enklave {
     /** Parse a file from top to bottom.
      *
      * The returned object contains the information if it was a check-in or a check-out and when it happened.
-     * It function can throw runtime_errors for various reasons.
+     * This function can throw runtime_errors for various reasons.
      *
      * @param f Path to a file
-     * @return check_in_or_out. TODO link to type doc.
+     * @return enklave_event. TODO link to type doc.
      */
 
     enklave_event parse_file(const fs::path &f) noexcept(false) {
@@ -187,10 +187,10 @@ namespace enklave {
         return result;
     }
 
-    /** Scans all files in a directory and returns a vector with parsed check_in_or_out.
+    /** Scans all files in a directory and returns a vector with parsed data.
      *
      * @param p Path do a directory.
-     * @return Vector with all check_in_or_out's.
+     * @return Vector with all enklave_event's. TODO reference type.
      */
     vector<enklave_event> scan_directory(const fs::path &p) {
         cout << "Scanning for relevant files in: " << p << ":\n";
@@ -246,10 +246,15 @@ namespace enklave {
         if (all_in_or_outs.size() % 2 != 0) {
             throw logic_error("Check-ins and check-outs are pairs. The provided dataset does not have an even size.");
         }
-        /* Copy elements from vector<check_in_or_out> to vector<pair<date::sys_seconds, date::sys_seconds>>
-         * where the first element of the pair represents a check-in and the second a check-out.
-         * I am not aware of an std::algorithm iterating a container in x[n] / x[n+1] fashion.
+
+        /* Arrange vector with holding single events in pairs such that each pair represents a timeslot.
+         * The first element of the pair represents a check-in and the second the corresponding check-out.
+         * I am not aware of any std::algorithm iterating a container where x[n] and x[n+1] is available in the
+         * function body such that I employ a manual loop.
+         *
          * Above check ensures the manual loop will always terminate.
+         *
+         * Note: this loop iterates on container type enklave_event.
          */
         for (auto check_in = all_in_or_outs.begin(); check_in != all_in_or_outs.end(); ++check_in) {
             auto check_out = next(check_in);

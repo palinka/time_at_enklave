@@ -13,7 +13,7 @@ namespace fs = std::filesystem;
 #endif
 
 TEST(parseDatetime, WithSuccess) {
-    // Convert a string containing point in time to date::sys_seconds.
+    // Convert a string containing a point in time to date::sys_seconds.
     auto point_in_time = parse_datetime("X-Pm-Date: Fri, 13 Sep 2019 13:44:02 +0200").value();
 
     // Reconvert result to a string.

@@ -44,6 +44,8 @@ This repo contains the '.idea' folder used by the IDE CLion.
 [date.h](include/date.h) is included in folder 'includes/' for convenience. See [github](https://github.com/HowardHinnant/date) for original source.
 
 ## TODOs
+* Return an optional for parse_file() if result is empty for any reason?
+* Do I need to use fs::path f.string() to print?
 * Filter out impossible events, e.g. 2 sequential check-ins.
 * Use either std::enld or \n
 * unknown file: Failure
