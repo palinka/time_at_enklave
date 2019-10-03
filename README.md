@@ -46,16 +46,11 @@ This repo contains the '.idea' folder used by the IDE CLion.
 ## TODOs
 * Return an optional for parse_file() if result is empty for any reason?
 * Do I need to use fs::path f.string() to print?
-* Filter out impossible events, e.g. 2 sequential check-ins.
-* Use either std::enld or \n
-* unknown file: Failure
+* Use either std::endln or \n
 * Get rid of config-file.
 * Find a better solution for the filesystem header and include spread across files.
-* If a check-in / check-out pair does not match, because a file is missing, the program exits instead of computing the other pairs.
 * Check compiler versions with cmake, e.g. gcc 8.0 is required for filesystem.
 * Add concurrency?
-* Remove unnecessary std::
-* Ensure passing by ref is really not required.
 * Grab TODOs
 
 ## Some learnings
