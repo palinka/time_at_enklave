@@ -208,7 +208,6 @@ namespace enklave {
         return enklave_events;
     }
 
-    // TODO rename all_in_or_outs.
     vector<timeslot> compute_timeslots(vector<enklave_event> &events) noexcept(false) {
         vector<timeslot> result;
 
@@ -225,15 +224,13 @@ namespace enklave {
         sort(events.begin(), events.end(), sorting_function);
 
         auto impossible_event_predicate = [](const enklave_event &first, const enklave_event &second) {
-            if ((first.is_check_in() && second.is_check_in()) || (!first.is_check_in() && !second.is_check_in())) {
-                return true;
-            } else {
-                return false;
-            }
+            // If both events are of same type.
+            return (first.is_check_in() && second.is_check_in()) || (!first.is_check_in() && !second.is_check_in());
         };
 
         // Deal with forgotten check-in's or check-out's. Such missing events result in adjacent events of the same
-        // type in the time-sorted vector. When, e.g. two check-in's follow in a row, simply keep the latest.
+        // type in the time-sorted vector.
+        // This do-while loop will keep only the last (oldest) event and delete younger adjacent ones.
         auto it = events.begin();
         do {
             it = adjacent_find(it, events.end(), impossible_event_predicate);
@@ -249,7 +246,6 @@ namespace enklave {
             cerr << "The last event in the list is removed, it misses its check-out." << endl;
             cerr << events.back();
             events.pop_back();
-            //throw logic_error("Check-ins and check-outs are pairs. The provided dataset does not have an even size.");
         }
 
         /* Arrange vector holding single events in pairs such that each pair represents a timeslot.
@@ -267,17 +263,25 @@ namespace enklave {
             ++check_in;
         }
 
+        // Do some sanity checks of result.
+        // TODO Add rounding of size is not even.
         if (events.size() / 2 != result.size()) {
             throw logic_error("The computed timeslots must be half of the size of all check-ins and check-outs.");
+        }
+
+        for (auto &x: result) {
+            if (!x.first.is_check_in() || x.second.is_check_in()) {
+                throw logic_error("An unexpected logic error occurred: one or more check-ins and/or check-outs are "
+                                  "interchanged.");
+            }
         }
         return result;
     }
 
-    duration compute_duration(vector<timeslot> slots) {
+    duration compute_duration(const vector<timeslot> &slots) {
         return accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, timeslot slot) {
             return accumulator + (slot.second.get_when() - slot.first.get_when());
         });
-
     }
 }
 #endif //TIME_AT_ENKLAVE_ENKLAVE_HPP
