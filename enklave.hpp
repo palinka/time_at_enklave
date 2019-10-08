@@ -39,6 +39,10 @@ namespace enklave {
         EnklaveEventType type;
         date::sys_seconds when;
         fs::path file; // Path to file feeding this type with values.
+
+        bool operator<(const EnklaveEvent &rhs) {
+            return this->when < rhs.when;
+        }
     };
 
     ostream &operator<<(ostream &out, const EnklaveEvent &event) {
@@ -188,12 +192,7 @@ namespace enklave {
         }
 
         // Sort by time.
-        // TODO make it an operator.
-        auto sorting_function = [](EnklaveEvent &c1, EnklaveEvent &c2) {
-            return c1.when < c2.when;
-        };
-
-        sort(events.begin(), events.end(), sorting_function);
+        sort(events.begin(), events.end());
 
         auto impossible_event_predicate = [](const EnklaveEvent &first, const EnklaveEvent &second) {
             // If both events are of same type.
@@ -230,14 +229,12 @@ namespace enklave {
          */
         for (auto check_in = events.begin(); check_in != events.end(); ++check_in) {
             auto check_out = next(check_in);
-            result.push_back(make_pair(ref(*check_in), ref(*check_out)));
-            // Most probably this would be more readable:
-            // result.push_back(timeslot{*check_in, *check_out});
+            result.push_back(timeslot{*check_in, *check_out});
             ++check_in;
         }
 
         // Do some sanity checks of result.
-        // TODO Add rounding of size is not even.
+
         if (events.size() / 2 != result.size()) {
             throw logic_error("The computed timeslots must be half of the size of all check-ins and check-outs.");
         }
