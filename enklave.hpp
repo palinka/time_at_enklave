@@ -30,62 +30,36 @@ namespace enklave {
     // Let's use int for durations.
     using duration = chrono::duration<int>;
 
-    struct check_in_or_out {
+    enum class EnklaveEventType {
+        CHECK_IN,
+        CHECK_OUT
+    };
+
+    struct EnklaveEvent {
+        EnklaveEventType type;
         date::sys_seconds when;
-        fs::path file;
+        fs::path file; // Path to file feeding this type with values.
     };
 
-    struct check_in : check_in_or_out {
-    };
-
-    struct check_out : check_in_or_out {
-    };
-
-    // Instead of holding one member variable for check-in and one for check-out in a class , a variant can be used.
-    // This also eliminates determining which event an instance holds via checking against values, e.g. considering
-    // date::sys_seconds zero(std::chrono::seconds(0)) being "this member is not used/initialized", so it must be
-    // the other member.
-    class enklave_event {
-    private:
-        variant<check_in, check_out> m_check_in_or_out;
-
-    public:
-        date::sys_seconds get_when() const {
-            return visit([](auto &&event) { return event.when; }, m_check_in_or_out);
+    ostream &operator<<(ostream &out, const EnklaveEvent &event) {
+        switch (event.type) {
+            case EnklaveEventType::CHECK_IN :
+                out << "Check-in  at: " << date::format("%F %T", event.when) << endl;
+                break;
+            case EnklaveEventType::CHECK_OUT :
+                out << "Check-out  at: " << date::format("%F %T", event.when) << endl;
+                break;
+            default:
+                cerr << "Output stream not implemented for this EnklaveEventType." << endl;
+                break;
         }
 
-        fs::path get_filepath() const {
-            return visit([](auto &&event) { return event.file; }, m_check_in_or_out);
-        }
-
-        // Using operator= for implicit conversations via assignment.
-        enklave_event &operator=(check_in event) {
-            m_check_in_or_out = event;
-            return *this;
-        }
-
-        enklave_event &operator=(check_out event) {
-            m_check_in_or_out = event;
-            return *this;
-        }
-
-        bool is_check_in() const {
-            return holds_alternative<check_in>(m_check_in_or_out);
-        };
-    };
-
-    ostream &operator<<(ostream &out, const enklave_event &event) {
-        if (event.is_check_in()) {
-            out << "Check-in  at: " << date::format("%F %T", event.get_when()) << endl;
-        } else {
-            out << "Check-out at: " << date::format("%F %T", event.get_when()) << endl;
-        }
-        out << "File: " << event.get_filepath().string() << endl;
+        event.file.empty() ? cerr << "Path to file is empty." : out << "File: " << event.file << endl;
         return out;
     }
 
-    // Timeslots consist in a pair of a check-in and a check-out contained in type enklave_event.
-    using timeslot = pair<enklave_event &, enklave_event &>;
+    // Timeslots consist in a pair of a check-in and a check-out contained in type EnklaveEvent.
+    using timeslot = pair<EnklaveEvent &, EnklaveEvent &>;
 
     /** Converts a string containing a ISO 8601-like date to date::sys_seconds.
     *
@@ -128,14 +102,14 @@ namespace enklave {
      * @return enklave_event. TODO link to type doc.
      */
 
-    enklave_event parse_file(const fs::path &f) noexcept(false) {
+    EnklaveEvent parse_file(const fs::path &f) noexcept(false) {
         //cout << "Parsing file: " << f << endl;
         const regex is_from_enklave_regex{"header.from=enklave.de"};
         const regex date_regex("X-Pm-Date:");
         const regex check_in_regex("Check_in");
         const regex check_out_regex("Check out");
 
-        enklave_event result;
+        EnklaveEvent result;
         ifstream ifs{f};
         string line;
         bool isCheckIn = false;
@@ -176,9 +150,9 @@ namespace enklave {
                 }
 
                 if (isCheckIn)
-                    result = check_in{date::sys_seconds{datetime.value()}, f};
+                    result = EnklaveEvent{EnklaveEventType::CHECK_IN, datetime.value(), f};
                 if (isCheckOut)
-                    result = check_out{date::sys_seconds{datetime.value()}, f};
+                    result = EnklaveEvent{EnklaveEventType::CHECK_OUT, datetime.value(), f};
             }
         }
         return result;
@@ -189,17 +163,15 @@ namespace enklave {
      * @param p Path do a directory.
      * @return Vector with all enklave_event's. TODO reference type.
      */
-    vector<enklave_event> scan_directory(const fs::path &p) {
+    vector<EnklaveEvent> scan_directory(const fs::path &p) {
         cout << "Scanning for relevant files in: " << p << ":\n";
-        vector<enklave_event> enklave_events;
-        enklave_event ee;
+        vector<EnklaveEvent> enklave_events;
         for (const fs::directory_entry &x: fs::directory_iterator(p)) {
             const fs::path &f = x;
             // TODO Use a std::iterator and a predicate function.
             if (f.extension() == ".eml") {
                 try {
-                    ee = parse_file(f);
-                    enklave_events.push_back(ee);
+                    enklave_events.push_back(parse_file(f));
                 } catch (runtime_error &e) {
                     cerr << e.what() << endl; // e.g. file could be opened, but parsing did not meet criteria.
                 } // Let the caller catch all other exceptions, e.g. from filesystem.
@@ -208,7 +180,7 @@ namespace enklave {
         return enklave_events;
     }
 
-    vector<timeslot> compute_timeslots(vector<enklave_event> &events) noexcept(false) {
+    vector<timeslot> compute_timeslots(vector<EnklaveEvent> &events) noexcept(false) {
         vector<timeslot> result;
 
         if (events.size() < 2) {
@@ -217,15 +189,16 @@ namespace enklave {
 
         // Sort by time.
         // TODO make it an operator.
-        auto sorting_function = [](enklave_event &c1, enklave_event &c2) {
-            return c1.get_when() < c2.get_when();
+        auto sorting_function = [](EnklaveEvent &c1, EnklaveEvent &c2) {
+            return c1.when < c2.when;
         };
 
         sort(events.begin(), events.end(), sorting_function);
 
-        auto impossible_event_predicate = [](const enklave_event &first, const enklave_event &second) {
+        auto impossible_event_predicate = [](const EnklaveEvent &first, const EnklaveEvent &second) {
             // If both events are of same type.
-            return (first.is_check_in() && second.is_check_in()) || (!first.is_check_in() && !second.is_check_in());
+            return (first.type == EnklaveEventType::CHECK_IN && second.type == EnklaveEventType::CHECK_IN) ||
+                   (first.type == EnklaveEventType::CHECK_OUT && second.type == EnklaveEventType::CHECK_OUT);
         };
 
         // Deal with forgotten check-in's or check-out's. Such missing events result in adjacent events of the same
@@ -253,7 +226,7 @@ namespace enklave {
          *
          * Above check ensures the manual loop will always terminate.
          *
-         * Note: this loop iterates on container type enklave_event.
+         * Note: this loop iterates on container type EnklaveEvent.
          */
         for (auto check_in = events.begin(); check_in != events.end(); ++check_in) {
             auto check_out = next(check_in);
@@ -269,8 +242,8 @@ namespace enklave {
             throw logic_error("The computed timeslots must be half of the size of all check-ins and check-outs.");
         }
 
-        for (auto &x: result) {
-            if (!x.first.is_check_in() || x.second.is_check_in()) {
+        for (auto &e: result) {
+            if (e.first.type != EnklaveEventType::CHECK_IN || e.second.type != EnklaveEventType::CHECK_OUT) {
                 throw logic_error("An unexpected logic error occurred: one or more check-ins and/or check-outs are "
                                   "interchanged.");
             }
@@ -280,7 +253,7 @@ namespace enklave {
 
     duration compute_duration(const vector<timeslot> &slots) {
         return accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, timeslot slot) {
-            return accumulator + (slot.second.get_when() - slot.first.get_when());
+            return accumulator + (slot.second.when - slot.first.when);
         });
     }
 }
