@@ -25,9 +25,6 @@ namespace fs = std::filesystem;
 #endif
 
 namespace enklave {
-    // Let's use int for durations.
-    using duration = std::chrono::duration<int>;
-
     enum class EnklaveEventType {
         CHECK_IN,
         CHECK_OUT
@@ -263,9 +260,9 @@ namespace enklave {
         return result;
     }
 
-    duration compute_duration(const std::vector<timeslot> &slots) {
+    std::chrono::seconds compute_duration(const std::vector<timeslot> &slots) {
         using namespace std::literals;
-        return accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, timeslot slot) {
+        return std::accumulate(slots.begin(), slots.end(), 0s, [](std::chrono::seconds accumulator, timeslot slot) {
             return accumulator + (slot.second.when - slot.first.when);
         });
     }
