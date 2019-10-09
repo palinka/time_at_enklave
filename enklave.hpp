@@ -240,7 +240,11 @@ namespace enklave {
          */
         for (auto check_in = events.begin(); check_in != events.end(); ++check_in) {
             auto check_out = next(check_in);
-            result.push_back(timeslot{*check_in, *check_out});
+
+            if(check_out == events.end())
+                throw std::logic_error("Unexpected logic error when computing timeslots.");
+
+            result.emplace_back(timeslot{*check_in, *check_out});
             ++check_in;
         }
 
