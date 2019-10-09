@@ -65,37 +65,43 @@ namespace enklave {
     // Timeslots consist in a pair of a check-in and a check-out contained in type EnklaveEvent.
     using timeslot = pair<EnklaveEvent &, EnklaveEvent &>;
 
-    /** Converts a string containing a ISO 8601-like date to date::sys_seconds.
+    /** Convert a string of a very specific form containing a datetime to date::sys_seconds.
     *
-    * ISO 8601-like strings that use "_" instead of ":" are valid input, e.g. "Confirmation 2019-08-22T15_31_05+02_00.eml".
+    * The first 16 characters of the string are ignored and the remaining rest parsed by the used date-library.
+    * Valid input strings have, e.g. this form: "X-Pm-Date: Fri, 13 Sep 2019 13:44:02 +0200".
     *
-    * Returns an optional to avoid any confusions with '0' which is a valid value for date::sys_seconds.
+    * If the string can't be converted to date::sys_seconds or is shorter then 16 character, an empty optional is
+    * returned.
     *
     * Note: timezones will be stripped away.
     *
-    * @param input String in ISO 8601-like format.
+    * Very unlikely, but possible, this function can throw a bad_alloc exception.
+    *
+    * @param input String containing a datetime.
     * @return std::optional<date::sys_seconds>.
     */
-    optional<date::sys_seconds> parse_datetime(const string &input) noexcept {
-        using namespace date;
+    optional<date::sys_seconds> parse_datetime(const string &line) noexcept(false) {
+        date::sys_seconds parsed_sys_seconds;
 
-        // Reduce input string to datetime.
-        smatch matches_date_time; // Contains result.
-        const regex date_time_pattern{R"(\d{2}\s\w{3}\s\d{4}\s\d{2}:\d{2}:\d{2}\s\+\d{4})"};
-        regex_search(input, matches_date_time, date_time_pattern);
+        // Extract substring containing the datetime from line.
+        string datetime;
+        try {
+            datetime = line.substr(16, line.size());
+        } catch (std::out_of_range &e) { // e.g. if line.size() < 16.
+            cerr << e.what() << endl;
+            return nullopt;
+        } // Let caller catch all other exceptions.
 
-        // Stream datetime string to date::parse.
-        stringstream extracted_date{matches_date_time[0]};
-        date::sys_seconds point_in_time;
-        // Note: timezone is stripped away for now.
-        extracted_date >> date::parse("%d %b %Y %T", point_in_time);
+        stringstream extracted_date{datetime};
+        extracted_date >> date::parse("%d %b %Y %T", parsed_sys_seconds);
 
         if (bool(extracted_date)) {
-            return point_in_time;
+            return parsed_sys_seconds;
         } else {
             return nullopt;
         }
     }
+
 
     /** Parse a file from top to bottom.
      *
