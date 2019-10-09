@@ -22,9 +22,12 @@ TEST(parseDatetime, WithSuccess) {
 }
 
 TEST(parseDatetime, WithFailure) {
+    // Test some "random" input.
     EXPECT_EQ(parse_datetime("somestring"), std::nullopt);
     // Test an impossible date.
     EXPECT_EQ(parse_datetime("X-Pm-Date: Fri, 99 Sep 2019 13:44:02 +0200"), std::nullopt);
+    // Test an almost valid input.
+    EXPECT_EQ(parse_datetime("Pm-Date: Fri, 13 Sep 2019 13:44:02 +0200"), std::nullopt);
 }
 
 TEST(parseFile, IsCheckinAndNotCheckout) {
