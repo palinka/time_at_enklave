@@ -103,21 +103,29 @@ namespace enklave {
     }
 
 
-    /** Parse a file from top to bottom.
+    /** Parse a file from top to bottom line-by-line.
      *
      * The returned object contains the information if it was a check-in or a check-out and when it happened.
-     * This function can throw runtime_errors for various reasons.
+     * This function can throw runtime_errors for various reasons and thus will either throw or return a value.
      *
      * @param f Path to a file
-     * @return enklave_event. TODO link to type doc.
+     * @return EnklaveEvent.
      */
 
     EnklaveEvent parse_file(const fs::path &f) noexcept(false) {
-        //cout << "Parsing file: " << f << endl;
+        // Regex expressions used to extract required values from file.
+
+        // File is from enklave (and thus relevant) if it contains a line with "header.from=enklave.de".
         const regex is_from_enklave_regex{"header.from=enklave.de"};
-        const regex date_regex("X-Pm-Date:");
-        const regex check_in_regex("Check_in");
-        const regex check_out_regex("Check out");
+
+        // File is a check-in if it contains a line that starts with "Subject:" and contains "Check_in".
+        const regex check_in_regex("(^Subject).*Check_in");
+
+        // File is a check-out if it contains a line that starts with "Subject:" and contains "Check out".
+        const regex check_out_regex("(^Subject).*Check out");
+
+        // The datetime that should be used is contained in a line that starts with "X-Pm-Date:".
+        const regex date_regex("^X-Pm-Date:");
 
         EnklaveEvent result;
         ifstream ifs{f};
@@ -125,17 +133,17 @@ namespace enklave {
         bool isCheckIn = false;
         bool isCheckOut = false;
 
-        // First line must in file must contain is_from_enklave_regex
         if (!getline(ifs, line)) {
             throw runtime_error{"Could not open file or get the first line: " + f.string()};
         }
 
+        // First line in file must contain is_from_enklave_regex.
         if (!regex_search(line, is_from_enklave_regex)) {
             throw runtime_error{"Parsed file is not an email from enklave: " + f.string()};
         }
 
         /* After the first line was parsed, read the rest of the file from top to bottom and assume:
-         * - First check_in_regex OR check_out_regex appears in file determining with event it was.
+         * - First check_in_regex OR check_out_regex appears in file determining which event it was.
          * - In the lines afterwards the datetime of the event is found.
          */
         while (getline(ifs, line)) {
@@ -163,6 +171,8 @@ namespace enklave {
                     result = EnklaveEvent{EnklaveEventType::CHECK_IN, datetime.value(), f};
                 if (isCheckOut)
                     result = EnklaveEvent{EnklaveEventType::CHECK_OUT, datetime.value(), f};
+
+                // Above runtime_erros cover parsing errors such that no sanity check on result is implemented here.
             }
         }
         return result;
