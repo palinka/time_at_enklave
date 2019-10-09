@@ -9,7 +9,7 @@
  **/
 namespace enklave {
     namespace config {
-        const static std::string path_with_mails{"../tests/data/"};
+        constexpr char path_with_mails[] = "../tests/data/";
     }
 }
 

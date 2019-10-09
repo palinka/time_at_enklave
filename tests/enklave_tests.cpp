@@ -32,7 +32,7 @@ TEST(parseDatetime, WithFailure) {
 
 TEST(parseFile, IsCheckinAndNotCheckout) {
     date::sys_seconds zero; // default init.
-    auto result = parse_file(enklave::config::path_with_mails + "/testfile_check_in_01.eml");
+    auto result = parse_file(std::string{enklave::config::path_with_mails} + "/testfile_check_in_01.eml");
     EXPECT_NE(result.when, zero);
 }
 
@@ -42,14 +42,15 @@ TEST(parseFile, FileNotFound) {
 }
 
 TEST(parseFile, SomeOtherFileFromEnklave) {
-    EXPECT_THROW(parse_file(enklave::config::path_with_mails + "/testfile_enklave_other.eml"), std::runtime_error);
+    EXPECT_THROW(parse_file(std::string{enklave::config::path_with_mails} + "/testfile_enklave_other.eml"),
+                 std::runtime_error);
 }
 
 TEST(parseFile, ManualyComputeResultOfOneCheckinAndCheckout) {
     using namespace date;
-    auto in = parse_file(enklave::config::path_with_mails + "/testfile_check_in_01.eml").when;
-    auto out = parse_file(enklave::config::path_with_mails + "/testfile_check_out_01.eml").when;
-    auto result = out- in;
+    auto in = parse_file(std::string{enklave::config::path_with_mails} + "/testfile_check_in_01.eml").when;
+    auto out = parse_file(std::string{enklave::config::path_with_mails} + "/testfile_check_out_01.eml").when;
+    auto result = out - in;
     EXPECT_EQ("04:36:24", format("%T", result));
 }
 
@@ -65,7 +66,7 @@ TEST(scanDirectory, FolderNotFound) {
 TEST(computeTimeslots, WithSuccess) {
     auto results = scan_directory(enklave::config::path_with_mails);
     auto slots = compute_timeslots(results);
-    auto [in, out] = slots.front();
+    auto[in, out] = slots.front();
     auto first_slot_duration = out.when - in.when;
     EXPECT_EQ("03:36:24", date::format("%T", first_slot_duration));
 }
