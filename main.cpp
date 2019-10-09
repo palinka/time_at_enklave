@@ -4,7 +4,7 @@
 int main(int argc, char *argv[]) {
     using namespace enklave;
 
-    string path_with_mails{enklave::config::path_with_mails};
+    std::string path_with_mails{enklave::config::path_with_mails};
 
     if (argc > 1) // If path is passed in by first argument, override configured path.
         path_with_mails = argv[1];

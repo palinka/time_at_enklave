@@ -25,10 +25,8 @@ namespace fs = std::filesystem;
 #endif
 
 namespace enklave {
-    using namespace std;
-
     // Let's use int for durations.
-    using duration = chrono::duration<int>;
+    using duration = std::chrono::duration<int>;
 
     enum class EnklaveEventType {
         CHECK_IN,
@@ -45,25 +43,25 @@ namespace enklave {
         }
     };
 
-    ostream &operator<<(ostream &out, const EnklaveEvent &event) {
+    std::ostream &operator<<(std::ostream &out, const EnklaveEvent &event) {
         switch (event.type) {
             case EnklaveEventType::CHECK_IN :
-                out << "Check-in  at: " << date::format("%F %T", event.when) << endl;
+                out << "Check-in  at: " << date::format("%F %T", event.when) << std::endl;
                 break;
             case EnklaveEventType::CHECK_OUT :
-                out << "Check-out  at: " << date::format("%F %T", event.when) << endl;
+                out << "Check-out  at: " << date::format("%F %T", event.when) << std::endl;
                 break;
             default:
-                cerr << "Output stream not implemented for this EnklaveEventType." << endl;
+                std::cerr << "Output stream not implemented for this EnklaveEventType." << std::endl;
                 break;
         }
 
-        event.file.empty() ? cerr << "Path to file is empty." : out << "File: " << event.file << endl;
+        event.file.empty() ? std::cerr << "Path to file is empty." : out << "File: " << event.file << std::endl;
         return out;
     }
 
     // Timeslots consist in a pair of a check-in and a check-out contained in type EnklaveEvent.
-    using timeslot = pair<EnklaveEvent &, EnklaveEvent &>;
+    using timeslot = std::pair<EnklaveEvent &, EnklaveEvent &>;
 
     /** Convert a string of a very specific form containing a datetime to date::sys_seconds.
     *
@@ -80,23 +78,23 @@ namespace enklave {
     * @param input String containing a datetime.
     * @return std::optional<date::sys_seconds>.
     */
-    optional<date::sys_seconds> parse_datetime(const string &line) noexcept(false) {
+    std::optional<date::sys_seconds> parse_datetime(const std::string &line) noexcept(false) {
         date::sys_seconds parsed_sys_seconds;
 
         // Extract substring containing the datetime from line.
-        string datetime;
+        std::string datetime;
         try {
             datetime = line.substr(16, line.size());
         } catch (std::out_of_range &e) { // e.g. if line.size() < 16.
-            cerr << e.what() << endl;
-            return nullopt;
+            std::cerr << e.what() << std::endl;
+            return std::nullopt;
         } // Let caller catch all other exceptions.
 
-        stringstream extracted_date{datetime};
+        std::stringstream extracted_date{datetime};
         extracted_date >> date::parse("%d %b %Y %T", parsed_sys_seconds);
 
         if (extracted_date.fail()) {
-            return nullopt;
+            return std::nullopt;
         } else {
             return parsed_sys_seconds;
         }
@@ -116,30 +114,30 @@ namespace enklave {
         // Regex expressions used to extract required values from file.
 
         // File is from enklave (and thus relevant) if it contains a line with "header.from=enklave.de".
-        const regex is_from_enklave_regex{"header.from=enklave.de"};
+        const std::regex is_from_enklave_regex{"header.from=enklave.de"};
 
         // File is a check-in if it contains a line that starts with "Subject:" and contains "Check_in".
-        const regex check_in_regex("(^Subject).*Check_in");
+        const std::regex check_in_regex("(^Subject).*Check_in");
 
         // File is a check-out if it contains a line that starts with "Subject:" and contains "Check out".
-        const regex check_out_regex("(^Subject).*Check out");
+        const std::regex check_out_regex("(^Subject).*Check out");
 
         // The datetime that should be used is contained in a line that starts with "X-Pm-Date:".
-        const regex date_regex("^X-Pm-Date:");
+        const std::regex date_regex("^X-Pm-Date:");
 
         EnklaveEvent result;
-        ifstream ifs{f};
-        string line;
+        std::ifstream ifs{f};
+        std::string line;
         bool isCheckIn = false;
         bool isCheckOut = false;
 
         if (!getline(ifs, line)) {
-            throw runtime_error{"Could not open file or get the first line: " + f.string()};
+            throw std::runtime_error{"Could not open file or get the first line: " + f.string()};
         }
 
         // First line in file must contain is_from_enklave_regex.
         if (!regex_search(line, is_from_enklave_regex)) {
-            throw runtime_error{"Parsed file is not an email from enklave: " + f.string()};
+            throw std::runtime_error{"Parsed file is not an email from enklave: " + f.string()};
         }
 
         /* After the first line was parsed, read the rest of the file from top to bottom and assume:
@@ -158,13 +156,13 @@ namespace enklave {
             // If a valid datetime pattern is found.
             if (regex_search(line, date_regex)) {
                 if (!isCheckIn && !isCheckOut) {
-                    throw runtime_error{"Parsed file is neither a check-in nor a check-out: " + f.string()};
+                    throw std::runtime_error{"Parsed file is neither a check-in nor a check-out: " + f.string()};
                 } // Assume no file that is a check-in AND a check-out exists.
 
                 // Parse datetime.
                 auto datetime = parse_datetime(line);
                 if (!datetime) {
-                    throw runtime_error{"Datetime could not be parsed: " + f.string()};
+                    throw std::runtime_error{"Datetime could not be parsed: " + f.string()};
                 }
 
                 if (isCheckIn)
@@ -183,28 +181,28 @@ namespace enklave {
      * @param p Path do a directory.
      * @return Vector with all enklave_event's. TODO reference type.
      */
-    vector<EnklaveEvent> scan_directory(const fs::path &p) {
-        cout << "Scanning for relevant files in: " << p << ":\n";
-        vector<EnklaveEvent> enklave_events;
+    std::vector<EnklaveEvent> scan_directory(const fs::path &p) {
+        std::cout << "Scanning for relevant files in: " << p << ":\n";
+        std::vector<EnklaveEvent> enklave_events;
         for (const fs::directory_entry &x: fs::directory_iterator(p)) {
             const fs::path &f = x;
             // TODO Use a std::iterator and a predicate function.
             if (f.extension() == ".eml") {
                 try {
                     enklave_events.push_back(parse_file(f));
-                } catch (runtime_error &e) {
-                    cerr << e.what() << endl; // e.g. file could be opened, but parsing did not meet criteria.
+                } catch (std::runtime_error &e) {
+                    std::cerr << e.what() << std::endl; // e.g. file could be opened, but parsing did not meet criteria.
                 } // Let the caller catch all other exceptions, e.g. from filesystem.
             }
         }
         return enklave_events;
     }
 
-    vector<timeslot> compute_timeslots(vector<EnklaveEvent> &events) noexcept(false) {
-        vector<timeslot> result;
+    std::vector<timeslot> compute_timeslots(std::vector<EnklaveEvent> &events) noexcept(false) {
+        std::vector<timeslot> result;
 
         if (events.size() < 2) {
-            throw logic_error("At least 2 events must be provided.");
+            throw std::logic_error("At least 2 events must be provided.");
         }
 
         // Sort by time.
@@ -223,16 +221,16 @@ namespace enklave {
         do {
             it = adjacent_find(it, events.end(), impossible_event_predicate);
             if (it != events.end()) {
-                cerr << "The following event is impossible and thus removed from computation:" << endl;
-                cerr << *it;
+                std::cerr << "The following event is impossible and thus removed from computation:" << std::endl;
+                std::cerr << *it;
                 it = events.erase(it);
             }
 
         } while (it != events.end());
 
         if (events.size() % 2 != 0) {
-            cerr << "The last event in the list is removed, it misses its check-out." << endl;
-            cerr << events.back();
+            std::cerr << "The last event in the list is removed, it misses its check-out." << std::endl;
+            std::cerr << events.back();
             events.pop_back();
         }
 
@@ -252,19 +250,21 @@ namespace enklave {
         // Do some sanity checks of result.
 
         if (events.size() / 2 != result.size()) {
-            throw logic_error("The computed timeslots must be half of the size of all check-ins and check-outs.");
+            throw std::logic_error("The computed timeslots must be half of the size of all check-ins and check-outs.");
         }
 
         for (auto &e: result) {
             if (e.first.type != EnklaveEventType::CHECK_IN || e.second.type != EnklaveEventType::CHECK_OUT) {
-                throw logic_error("An unexpected logic error occurred: one or more check-ins and/or check-outs are "
-                                  "interchanged.");
+                throw std::logic_error(
+                        "An unexpected logic error occurred: one or more check-ins and/or check-outs are "
+                        "interchanged.");
             }
         }
         return result;
     }
 
-    duration compute_duration(const vector<timeslot> &slots) {
+    duration compute_duration(const std::vector<timeslot> &slots) {
+        using namespace std::literals;
         return accumulate(slots.begin(), slots.end(), 0s, [](duration accumulator, timeslot slot) {
             return accumulator + (slot.second.when - slot.first.when);
         });

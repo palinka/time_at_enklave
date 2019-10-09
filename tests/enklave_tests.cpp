@@ -54,7 +54,7 @@ TEST(parseFile, ManualyComputeResultOfOneCheckinAndCheckout) {
 }
 
 TEST(scanDirectory, WithSuccess) {
-    vector<EnklaveEvent> results;
+    std::vector<EnklaveEvent> results;
     EXPECT_NO_THROW(results = scan_directory(enklave::config::path_with_mails));
 }
 
