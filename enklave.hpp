@@ -95,10 +95,10 @@ namespace enklave {
         stringstream extracted_date{datetime};
         extracted_date >> date::parse("%d %b %Y %T", parsed_sys_seconds);
 
-        if (bool(extracted_date)) {
-            return parsed_sys_seconds;
-        } else {
+        if (extracted_date.fail()) {
             return nullopt;
+        } else {
+            return parsed_sys_seconds;
         }
     }
 
@@ -217,7 +217,7 @@ namespace enklave {
         };
 
         // Deal with forgotten check-in's or check-out's. Such missing events result in adjacent events of the same
-        // type in the time-sorted vector.
+        // EnklaveEventType in the time-sorted vector.
         // This do-while loop will keep only the last (oldest) event and delete younger adjacent ones.
         auto it = events.begin();
         do {
