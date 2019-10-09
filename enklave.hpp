@@ -26,14 +26,15 @@ namespace fs = std::filesystem;
 
 namespace enklave {
     enum class EnklaveEventType {
+        UNDEFINED,
         CHECK_IN,
         CHECK_OUT
     };
 
     struct EnklaveEvent {
-        EnklaveEventType type;
-        date::sys_seconds when;
-        fs::path file; // Path to file feeding this type with values.
+        EnklaveEventType type = EnklaveEventType::UNDEFINED;
+        date::sys_seconds when; // Default initializes to 0 that corresponds to 1970-01-01 00:00:00.
+        fs::path file; // Default initializes to empty path.
 
         bool operator<(const EnklaveEvent &rhs) {
             return this->when < rhs.when;
@@ -42,6 +43,9 @@ namespace enklave {
 
     std::ostream &operator<<(std::ostream &out, const EnklaveEvent &event) {
         switch (event.type) {
+            case EnklaveEventType::UNDEFINED:
+                out << "Undefined EnklaveEventType at: " << date::format("%F %T", event.when) << std::endl;
+                break;
             case EnklaveEventType::CHECK_IN :
                 out << "Check-in  at: " << date::format("%F %T", event.when) << std::endl;
                 break;
