@@ -4,14 +4,12 @@
 #include <string>
 #include <regex>
 
-//File containing namespace for configuration
-// TODO get rid of global vars / use contexpr.
+/** File containing namespace for configuration.
+ * Values used in more than two places (e.g. main and tests/) are defined here.
+ **/
 namespace enklave {
     namespace config {
-        const std::string path_with_mails{"../tests/data/"};
-        const std::regex relevant_files_regex{"Confirmation_"};
-        const std::regex check_in_pattern{"Check in"};
-        const std::regex check_out_pattern{"Check out"};
+        const static std::string path_with_mails{"../tests/data/"};
     }
 }
 
