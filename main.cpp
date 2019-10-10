@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     if (argc > 1) // If path is passed in by first argument, override configured path.
         path_with_mails = argv[1];
 
-    auto found_events = scan_directory(path_with_mails);
+    auto found_events = parse_directory(path_with_mails);
 
     // Provide some user feedback:
     std::cout << found_events.size() << " events were found:" << std::endl;

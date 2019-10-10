@@ -178,7 +178,7 @@ namespace enklave {
      * @param p Path do a directory.
      * @return Vector with all enklave_event's. TODO reference type.
      */
-    std::vector<EnklaveEvent> scan_directory(const fs::path &p) {
+    std::vector<EnklaveEvent> parse_directory(const fs::path &p) {
         std::cout << "Scanning for relevant files in: " << p << ":\n";
         std::vector<EnklaveEvent> enklave_events;
         for (const fs::directory_entry &x: fs::directory_iterator(p)) {

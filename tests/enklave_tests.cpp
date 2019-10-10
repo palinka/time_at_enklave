@@ -54,17 +54,17 @@ TEST(parseFile, ManualyComputeResultOfOneCheckinAndCheckout) {
     EXPECT_EQ("04:36:24", format("%T", result));
 }
 
-TEST(scanDirectory, WithSuccess) {
+TEST(parseDirectory, WithSuccess) {
     std::vector<EnklaveEvent> results;
-    EXPECT_NO_THROW(results = scan_directory(enklave::config::path_with_mails));
+    EXPECT_NO_THROW(results = parse_directory(enklave::config::path_with_mails));
 }
 
-TEST(scanDirectory, FolderNotFound) {
-    EXPECT_THROW(scan_directory("someFolderThatSHOULDnotExist/never/ever"), fs::filesystem_error);
+TEST(parseDirectory, FolderNotFound) {
+    EXPECT_THROW(parse_directory("someFolderThatSHOULDnotExist/never/ever"), fs::filesystem_error);
 }
 
 TEST(computeTimeslots, WithSuccess) {
-    auto results = scan_directory(enklave::config::path_with_mails);
+    auto results = parse_directory(enklave::config::path_with_mails);
     auto slots = compute_timeslots(results);
     auto[in, out] = slots.front();
     auto first_slot_duration = out.when - in.when;
@@ -72,7 +72,7 @@ TEST(computeTimeslots, WithSuccess) {
 }
 
 TEST(computeDuration, WithSuccess) {
-    auto found_events = scan_directory(enklave::config::path_with_mails);
+    auto found_events = parse_directory(enklave::config::path_with_mails);
     auto timeslots = compute_timeslots(found_events);
     auto result = compute_duration(timeslots);
     EXPECT_EQ("11:12:48", date::format("%T", result));
