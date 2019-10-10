@@ -2,11 +2,12 @@
 
 Enklave is the co-working space where I am refreshing and modernizing my C++ knowledge. For every check-in and check-out at Enklave I receive an automated e-mail reflecting my presence.
 
-This C++ example project computes the time I spend in the co-working space. For that it scans a local folder containing the exported mails, filters out the relevant ones and computes the total time.
+This C++ example project computes the time I spent in the co-working space. For that it scans a local folder containing the exported mails, filters out the relevant ones and computes the total time.
 
 ## Compile and run
 
 ### Linux
+
 ```
 # Compile
 
@@ -24,6 +25,11 @@ cmake ../ && make
 
 # Run program
 ./time_at_enklave
+
+# Render the documentation
+# Output is written to doc/
+# Requireds installed doxygen and optional graphviz
+doxygen
 ```
 
 The program will use some test-files contained in 'tests/data/' by default. However, just pass a folder to another location like this:
@@ -33,25 +39,31 @@ The program will use some test-files contained in 'tests/data/' by default. Howe
 ```
 
 ### Windows
-Use CMake to generate a Visual Studio project; tested with Visual Studio 2019.
+Use CMake to generate a Visual Studio project; tested once with Visual Studio 2019.
 
 ### CLion
 
 This repo contains the '.idea' folder used by the IDE CLion.
 
-# Dependencies and 3rd party
+## Dependencies and 3rd party
 
 [date.h](include/date.h) is included in folder 'includes/' for convenience. See [github](https://github.com/HowardHinnant/date) for original source.
 
-## TODOs
-* Return an optional for parse_file() if result is empty for any reason?
-* Do I need to use fs::path f.string() to print?
-* Use either std::endln or \n
-* Get rid of config-file.
-* Find a better solution for the filesystem header and include spread across files.
-* Check compiler versions with cmake, e.g. gcc 8.0 is required for filesystem.
-* Add concurrency?
-* Grab TODOs
+## Potential new Features
+* Implement other strategies to deal with forgotten events.
+* For every bought coffee or snack, an email is send. Count this items.
+* Actually compute how much money should be charged:
+    * Find out how Enklave deals with forgotten events, e.g. a check-out is received, but no check-in happened beforehand et al.
+    * Every started hour is charged, so the interval to compute the actual price is "started hours" and not seconds.
 
-## Some learnings
-* 'using' is not a type definition, but a type alias. So it can't be combined in an elegant way with variants if two aliases use the same type. Unluckily the compiler informs about this not when declaring the variant, but when std::get<type>'ing the value.
+## TODOs
+
+### Must have
+* Add [[nodiscard]] and reason if subproblems could be solved at compile time.
+* Document release build switches.
+
+### Optional
+* Configure a Continuous Integration pipeline such that, e.g. after each push the code gets compiled by various compilers and tests are executed.
+* Build system: eventually check minimum installed compiler versions.
+* Check if more pedantic compile flags are required.
+* Eventually add concurrency / multithreading.
