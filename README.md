@@ -18,7 +18,15 @@ This C++ example project computes the time I spent in the co-working space. It s
 # g++ (Ubuntu 9.1.0-2ubuntu2~18.04) 9.1.0
 
 mkdir build && cd build
-cmake ../ && make
+
+# Debug
+cmake ../
+
+# OR release
+cmake -DCMAKE_BUILD_TYPE=Release ../
+
+# Compile
+make -j2
 
 # Run tests
 ./time_at_enklave_tests
@@ -60,7 +68,6 @@ This repo contains the '.idea' folder used by the IDE CLion.
 
 ### Must have
 * Add [[nodiscard]] and reason if subproblems could be solved at compile time.
-* Document release build switches.
 
 ### Optional
 * Check if std::istream_iterator could help with a more FP style for the very imperative 'parse_file'-function.
