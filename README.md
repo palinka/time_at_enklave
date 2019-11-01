@@ -1,8 +1,8 @@
 # Time at Enklave
+Enklave is the co-working space where I am working on refreshing and modernizing my C++ knowledge. For every check-in and check-out at Enklave I receive an automated email which confirms my presence.
 
-Enklave is the co-working space where I am refreshing and modernizing my C++ knowledge. For every check-in and check-out at Enklave I receive an automated e-mail reflecting my presence.
+This C++ example project computes the time I spent in the co-working space. It scans a local folder containing the exported emails, filters out the relevant ones and computes the total time spent in Enklave.
 
-This C++ example project computes the time I spent in the co-working space. For that it scans a local folder containing the exported mails, filters out the relevant ones and computes the total time.
 
 ## Compile and run
 
@@ -63,6 +63,7 @@ This repo contains the '.idea' folder used by the IDE CLion.
 * Document release build switches.
 
 ### Optional
+* Check if std::istream_iterator could help with a more FP style for the very imperative 'parse_file'-function.
 * Configure a Continuous Integration pipeline such that, e.g. after each push the code gets compiled by various compilers and tests are executed.
 * Build system: eventually check minimum installed compiler versions.
 * Check if more pedantic compile flags are required.
